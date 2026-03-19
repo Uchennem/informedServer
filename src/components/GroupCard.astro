@@ -1,0 +1,68 @@
+---
+type Group = {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  memberCount?: number;
+};
+
+type Props = {
+  group: Group;
+};
+
+const { group } = Astro.props;
+---
+
+<article class="group-card">
+  <div>
+    <h2>{group.name}</h2>
+    {group.description ? <p class="description">{group.description}</p> : null}
+
+    <p class="meta">
+      <span>{group.category ?? 'General'}</span>
+      <span>•</span>
+      <span>{group.memberCount ?? 0} members</span>
+    </p>
+  </div>
+
+  <div class="actions">
+    <slot />
+  </div>
+</article>
+
+<style>
+  .group-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .group-card h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.1rem;
+  }
+
+  .description {
+    margin: 0 0 0.45rem;
+    color: #374151;
+  }
+
+  .meta {
+    margin: 0;
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    color: #4b5563;
+    font-size: 0.9rem;
+  }
+
+  .actions {
+    flex-shrink: 0;
+  }
+</style>
