@@ -1,0 +1,72 @@
+---
+import GroupCard from '../components/GroupCard.astro';
+import JoinGroupButton from '../components/JoinGroupButton.svelte';
+import Layout from '../layouts/Layout.astro';
+
+type Group = {
+  id: string;
+  _id?: string;
+  name: string;
+  description?: string;
+  category?: string;
+  memberCount?: number;
+};
+
+let groups: Group[] = [];
+
+try {
+  const response = await fetch(import.meta.env.PUBLIC_API_BASE_URL + '/api/groups');
+
+  if (response.ok) {
+    const data = await response.json();
+    groups = Array.isArray(data) ? data : [];
+  }
+} catch {
+  groups = [];
+}
+---
+
+<Layout>
+  <main class="groups-page">
+    <h1>Groups</h1>
+
+    {
+      groups.length > 0 ? (
+        groups.map((group) => {
+          const groupId = group.id ?? group._id ?? '';
+          return (
+            <GroupCard
+              group={{
+                id: groupId,
+                name: group.name,
+                description: group.description,
+                category: group.category,
+                memberCount: group.memberCount,
+              }}
+            >
+              <JoinGroupButton
+                client:load
+                groupId={groupId}
+                baseUrl={import.meta.env.PUBLIC_API_BASE_URL}
+              />
+            </GroupCard>
+          );
+        })
+      ) : (
+        <p>No groups available.</p>
+      )
+    }
+  </main>
+</Layout>
+
+<style>
+  .groups-page {
+    max-width: 860px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  h1 {
+    margin: 0 0 1rem;
+  }
+</style>
