@@ -2,7 +2,10 @@ import express from "express";
 import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth.ts";
+import requireAuth from "./middleware/requireAuth.ts";
+import groupsRoutes from "./routes/groupsRoutes.js";
 import routes from "./routes/index.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -16,6 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 const authHandler = toNodeHandler(auth);
 
 app.post("/api/auth/*", (req, res) => authHandler(req, res));
+app.use("/api/users", requireAuth, userRoutes);
+app.use("/api/groups", requireAuth, groupsRoutes);
 
 // Routes
 app.use("/", routes);
