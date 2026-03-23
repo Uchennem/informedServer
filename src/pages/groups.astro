@@ -1,6 +1,6 @@
 ---
 import GroupCard from '../components/GroupCard.astro';
-import JoinGroupButton from '../components/JoinGroupButton.svelte';
+import JoinButton from '../components/JoinButton.svelte';
 import Layout from '../layouts/Layout.astro';
 
 type Group = {
@@ -10,6 +10,7 @@ type Group = {
   description?: string;
   category?: string;
   memberCount?: number;
+  isMember?: boolean;
 };
 
 let groups: Group[] = [];
@@ -44,10 +45,11 @@ try {
                 memberCount: group.memberCount,
               }}
             >
-              <JoinGroupButton
+              <JoinButton
                 client:load
                 groupId={groupId}
-                baseUrl={import.meta.env.PUBLIC_API_BASE_URL}
+                isMember={group.isMember ?? false}
+                memberCount={group.memberCount ?? 0}
               />
             </GroupCard>
           );
