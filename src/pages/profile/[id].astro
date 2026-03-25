@@ -1,0 +1,329 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+type UserProfile = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  major?: string;
+  year?: string | number;
+  bio?: string;
+  avatar?: string;
+  interestTags?: string[];
+  interests?: string[];
+};
+
+type Post = {
+  id?: string;
+  _id?: string;
+  title?: string;
+  category?: string;
+  date?: string;
+  createdAt?: string;
+};
+
+const { id } = Astro.params;
+const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
+const request = Astro.request;
+const cookieHeader = request.headers.get('cookie') ?? '';
+
+let user: UserProfile | null = null;
+let recentPosts: Post[] = [];
+let isOwnProfile = false;
+let isNotFound = false;
+
+function normalizeUser(payload: unknown): UserProfile | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+
+  if (candidate.user && typeof candidate.user === 'object') {
+    return candidate.user as UserProfile;
+  }
+
+  if ('name' in candidate || 'id' in candidate || '_id' in candidate) {
+    return candidate as UserProfile;
+  }
+
+  return null;
+}
+
+if (!id || !baseUrl) {
+  isNotFound = true;
+  Astro.response.status = 404;
+} else {
+  try {
+    const userResponse = await fetch(import.meta.env.PUBLIC_API_BASE_URL + '/api/users/' + id, {
+      headers: {
+        cookie: cookieHeader,
+      },
+    });
+
+    if (userResponse.status === 404) {
+      isNotFound = true;
+      Astro.response.status = 404;
+    } else if (userResponse.ok) {
+      const userPayload = await userResponse.json();
+      user = normalizeUser(userPayload);
+
+      if (!user) {
+        isNotFound = true;
+        Astro.response.status = 404;
+      }
+    } else {
+      isNotFound = true;
+      Astro.response.status = userResponse.status;
+    }
+  } catch {
+    isNotFound = true;
+    Astro.response.status = 404;
+  }
+
+  if (!isNotFound) {
+    try {
+      const postsResponse = await fetch(`${baseUrl}/api/posts?author=${encodeURIComponent(id)}`, {
+        headers: {
+          cookie: cookieHeader,
+        },
+      });
+
+      if (postsResponse.ok) {
+        const postsPayload = await postsResponse.json();
+        recentPosts = Array.isArray(postsPayload)
+          ? postsPayload
+          : Array.isArray(postsPayload?.posts)
+            ? postsPayload.posts
+            : [];
+      }
+    } catch {
+      recentPosts = [];
+    }
+
+    try {
+      const currentUserResponse = await fetch(`${baseUrl}/api/users`, {
+        headers: {
+          cookie: cookieHeader,
+        },
+      });
+
+      if (currentUserResponse.ok) {
+        const currentUserPayload = await currentUserResponse.json();
+        const currentUser = normalizeUser(currentUserPayload);
+
+        const currentUserId = currentUser?.id ?? currentUser?._id;
+        const profileUserId = user?.id ?? user?._id;
+
+        isOwnProfile = Boolean(currentUserId && profileUserId && currentUserId === profileUserId);
+      }
+    } catch {
+      isOwnProfile = false;
+    }
+  }
+}
+
+const interestTags = user?.interestTags ?? user?.interests ?? [];
+---
+
+<Layout>
+  <main class="profile-page">
+    {
+      isNotFound || !user ? (
+        <section class="not-found">
+          <h1>User not found</h1>
+          <p>This profile may not exist or is unavailable right now.</p>
+        </section>
+      ) : (
+        <>
+          <section class="profile-header">
+            <img
+              src={user.avatar || '/favicon.svg'}
+              alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
+              class="avatar"
+            />
+
+            <div class="header-info">
+              <h1>{user.name ?? 'Unnamed User'}</h1>
+              <p class="meta">
+                <span>{user.major ?? 'Undeclared Major'}</span>
+                <span>•</span>
+                <span>{user.year ?? 'Year not provided'}</span>
+              </p>
+
+              {isOwnProfile ? <button type="button" class="edit-button">Edit Profile</button> : null}
+            </div>
+          </section>
+
+          <section class="bio-section">
+            <h2>Bio</h2>
+            <p>{user.bio ?? 'No bio available.'}</p>
+          </section>
+
+          <section class="interests-section">
+            <h2>Interest Tags</h2>
+            {interestTags.length > 0 ? (
+              <ul class="tags">
+                {interestTags.map((tag) => (
+                  <li>{tag}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No interests shared yet.</p>
+            )}
+          </section>
+
+          <section class="posts-section">
+            <h2>Recent Posts</h2>
+            {recentPosts.length > 0 ? (
+              <ul class="posts-list">
+                {recentPosts.map((post) => (
+                  <li>
+                    <p class="post-title">{post.title ?? 'Untitled Post'}</p>
+                    <p class="post-meta">
+                      <span>{post.category ?? 'General'}</span>
+                      <span>•</span>
+                      <time datetime={post.date ?? post.createdAt ?? ''}>
+                        {post.date || post.createdAt
+                          ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString()
+                          : 'Date unavailable'}
+                      </time>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No recent posts found.</p>
+            )}
+          </section>
+        </>
+      )
+    }
+  </main>
+</Layout>
+
+<style>
+  .profile-page {
+    max-width: 860px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .profile-header,
+  .bio-section,
+  .interests-section,
+  .posts-section,
+  .not-found {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: #fff;
+  }
+
+  .profile-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .avatar {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+  }
+
+  .header-info h1 {
+    margin: 0 0 0.35rem;
+  }
+
+  .meta {
+    margin: 0 0 0.65rem;
+    color: #4b5563;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .bio-section p,
+  .interests-section p,
+  .posts-section p,
+  .not-found p {
+    margin: 0;
+  }
+
+  .tags {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tags li {
+    font-size: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 9999px;
+    padding: 0.1rem 0.45rem;
+    color: #374151;
+  }
+
+  .posts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .posts-list li {
+    border-top: 1px solid #f3f4f6;
+    padding-top: 0.6rem;
+  }
+
+  .posts-list li:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .post-title {
+    margin: 0 0 0.25rem;
+    font-weight: 600;
+  }
+
+  .post-meta {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.85rem;
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .edit-button {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .edit-button:hover {
+    background: #f9fafb;
+  }
+</style>

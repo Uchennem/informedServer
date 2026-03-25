@@ -13,9 +13,10 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
+    "@astrojs/node": "^10.0.3",
     "@astrojs/svelte": "^8.0.2",
     "@better-auth/mongo-adapter": "^1.5.5",
-    "astro": "^6.0.5",
+    "astro": "^6.0.8",
     "better-auth": "^1.5.5",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
