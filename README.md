@@ -1,46 +1,72 @@
-# Astro Starter Kit: Basics
+# Informed
+
+Informed is an Astro + Svelte frontend with an Express + Better Auth API.
+
+## Local Development
+
+Install dependencies:
 
 ```sh
-npm create astro@latest -- --template basics
+npm install
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Run frontend + API together:
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```sh
+npm run dev
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+- Frontend (Astro): `http://localhost:4321`
+- API (Express): `http://localhost:3000`
 
-## 🧞 Commands
+## Build Commands
 
-All commands are run from the root of the project, from a terminal:
+- `npm run build` — default build (Node adapter)
+- `npm run build:node` — explicit Node adapter build
+- `npm run build:netlify` — Netlify adapter build
+- `npm run start:api` — run Express API server
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## Deploy Strategy (Netlify + Render)
 
-## 👀 Want to learn more?
+### 1) Deploy API on Render
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+This repo includes [render.yaml](render.yaml) for the API service.
+
+Set these Render environment variables:
+
+- `MONGODB_URI`
+- `BETTER_AUTH_SECRET`
+- `FRONTEND_URL` (your Netlify site URL)
+- `CORS_ORIGIN` (same Netlify URL; comma-separate if multiple)
+
+Render uses:
+
+- Build: `npm install`
+- Start: `npm run start:api`
+
+### 2) Deploy Frontend on Netlify
+
+This repo includes [netlify.toml](netlify.toml).
+
+Set these Netlify environment variables:
+
+- `PUBLIC_API_BASE_URL` = your Render API base URL
+
+Netlify uses:
+
+- Build command: `npm run build:netlify`
+- Publish directory: `dist`
+
+## Environment Variables
+
+Recommended local `.env` values:
+
+```env
+MONGODB_URI=...
+BETTER_AUTH_SECRET=...
+PUBLIC_API_BASE_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:4321
+CORS_ORIGIN=http://localhost:4321
+```
+
+For production, set `PUBLIC_API_BASE_URL` to your Render API URL and set `FRONTEND_URL`/`CORS_ORIGIN` to your Netlify URL.

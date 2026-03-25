@@ -8,11 +8,16 @@
   "scripts": {
     "dev": "concurrently \"astro dev\" \"node server/index.js\"",
     "build": "astro build",
+    "build:netlify": "cross-env DEPLOY_TARGET=netlify astro build",
+    "build:node": "cross-env DEPLOY_TARGET=node astro build",
     "preview": "astro preview",
+    "start": "node server/index.js",
+    "start:api": "node server/index.js",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
+    "@astrojs/netlify": "^7.0.4",
     "@astrojs/node": "^10.0.3",
     "@astrojs/svelte": "^8.0.2",
     "@better-auth/mongo-adapter": "^1.5.5",
@@ -31,6 +36,7 @@
     "@types/node": "^25.5.0",
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19"
   }

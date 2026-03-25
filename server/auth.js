@@ -6,6 +6,10 @@ import process from "node:process";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET;
+const trustedOrigins = (process.env.CORS_ORIGIN ?? process.env.FRONTEND_URL ?? "http://localhost:4321")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable.");
@@ -21,6 +25,7 @@ const database = mongoClient.db();
 export const auth = betterAuth({
   database: mongodbAdapter(database, { client: mongoClient }),
   secret: BETTER_AUTH_SECRET,
+  trustedOrigins,
 });
 
 export default auth;
