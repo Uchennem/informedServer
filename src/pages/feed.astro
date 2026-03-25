@@ -22,6 +22,7 @@ type MatchUser = {
 
 const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
+const feedFilters = ['All', 'Social', 'Academic', 'Sports', 'Faith', 'Arts'];
 
 let posts: Post[] = [];
 let matches: MatchUser[] = [];
@@ -62,18 +63,40 @@ try {
 ---
 
 <Layout>
-  <main class="min-h-screen bg-slate-900 text-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <main class="min-h-screen bg-slate-900 pb-20 md:pb-8">
+    <div class="max-w-6xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Feed Section */}
       <section class="lg:col-span-2">
         <h1 class="text-3xl font-bold mb-6">Feed</h1>
+
+        <div class="mb-6 overflow-x-auto">
+          <div class="flex min-w-max gap-2">
+            {feedFilters.map((filter) => (
+              <button
+                type="button"
+                class={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                  filter === 'All'
+                    ? 'border-indigo-500 bg-indigo-500 text-white'
+                    : 'border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {
           posts.length > 0 ? (
             posts.map((post) => <PostCard post={post} />)
           ) : (
             <div class="card text-center py-12">
-              <p class="text-slate-400">No posts available.</p>
+              <p class="text-slate-300 font-semibold">No posts available yet.</p>
+              <p class="mt-2 text-sm text-slate-400">Join groups or update your interests to personalize your feed.</p>
+              <div class="mt-5 flex justify-center gap-3">
+                <a href="/groups" class="btn-primary">Join Groups</a>
+                <a href="/people" class="btn-secondary">Find People</a>
+              </div>
             </div>
           )
         }
@@ -92,7 +115,7 @@ try {
 
                 return (
                   <article class={`flex flex-col gap-2 pb-4 ${index > 0 ? 'pt-4 border-t border-slate-600' : ''}`}>
-                    <p class="font-semibold text-text-primary">{match.name}</p>
+                    <p class="font-semibold text-slate-100">{match.name}</p>
                     <p class="text-sm text-slate-400">{match.major ?? 'Undeclared'}</p>
 
                     {interestTags.length > 0 ? (

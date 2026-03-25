@@ -1,0 +1,32 @@
+---
+export const prerender = false;
+
+const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
+const request = Astro.request;
+
+if (!baseUrl) {
+  return Astro.redirect('/feed');
+}
+
+try {
+  const response = await fetch(`${baseUrl}/api/users`, {
+    headers: {
+      cookie: request.headers.get('cookie') ?? '',
+    },
+  });
+
+  if (response.ok) {
+    const payload = await response.json();
+    const currentUser = payload?.user ?? payload;
+    const userId = currentUser?.id ?? currentUser?._id;
+
+    if (userId) {
+      return Astro.redirect(`/profile/${userId}`);
+    }
+  }
+} catch {
+  // fall through to feed redirect
+}
+
+return Astro.redirect('/feed');
+---

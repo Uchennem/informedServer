@@ -8,6 +8,6 @@
   }
 </script>
 
-<button type="button" on:click={handleClick} class="btn-primary text-sm">
+<button type="button" onclick={handleClick} class="btn-primary text-sm">
   RSVP ({count})
 </button>

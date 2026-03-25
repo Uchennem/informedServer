@@ -55,7 +55,7 @@
 <div class="flex flex-col gap-2 items-end">
   <button
     type="button"
-    on:click={toggleMembership}
+    onclick={toggleMembership}
     disabled={isSubmitting}
     class="btn-primary disabled:opacity-75 disabled:cursor-not-allowed"
   >
