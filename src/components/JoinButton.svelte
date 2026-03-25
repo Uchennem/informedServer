@@ -52,8 +52,13 @@
   }
 </script>
 
-<div class="join-button">
-  <button type="button" on:click={toggleMembership} disabled={isSubmitting}>
+<div class="flex flex-col gap-2 items-end">
+  <button
+    type="button"
+    on:click={toggleMembership}
+    disabled={isSubmitting}
+    class="btn-primary disabled:opacity-75 disabled:cursor-not-allowed"
+  >
     {#if isSubmitting}
       Saving...
     {:else if joined}
@@ -63,44 +68,9 @@
     {/if}
   </button>
 
-  <p class="count">{count} members</p>
+  <p class="text-xs text-slate-400">{count} members</p>
 
   {#if errorMessage}
-    <p class="error">{errorMessage}</p>
+    <p class="text-xs text-red-400">{errorMessage}</p>
   {/if}
 </div>
-
-<style>
-  .join-button {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    align-items: flex-end;
-  }
-
-  button {
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    border-radius: 0.5rem;
-    padding: 0.45rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-  }
-
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.75;
-  }
-
-  .count {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #4b5563;
-  }
-
-  .error {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #b91c1c;
-  }
-</style>

@@ -129,201 +129,86 @@ const interestTags = user?.interestTags ?? user?.interests ?? [];
 ---
 
 <Layout>
-  <main class="profile-page">
-    {
-      isNotFound || !user ? (
-        <section class="not-found">
-          <h1>User not found</h1>
-          <p>This profile may not exist or is unavailable right now.</p>
-        </section>
-      ) : (
-        <>
-          <section class="profile-header">
-            <img
-              src={user.avatar || '/favicon.svg'}
-              alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
-              class="avatar"
-            />
-
-            <div class="header-info">
-              <h1>{user.name ?? 'Unnamed User'}</h1>
-              <p class="meta">
-                <span>{user.major ?? 'Undeclared Major'}</span>
-                <span>•</span>
-                <span>{user.year ?? 'Year not provided'}</span>
-              </p>
-
-              {isOwnProfile ? <button type="button" class="edit-button">Edit Profile</button> : null}
-            </div>
+  <main class="min-h-screen bg-slate-900 text-slate-200">
+    <div class="max-w-2xl mx-auto px-4 py-8">
+      {
+        isNotFound || !user ? (
+          <section class="card text-center py-12">
+            <h1 class="text-2xl font-bold mb-4">User not found</h1>
+            <p class="text-slate-400">This profile may not exist or is unavailable right now.</p>
           </section>
+        ) : (
+          <>
+            {/* Profile Header */}
+            <section class="card mb-6 flex gap-6 items-start">
+              <img
+                src={user.avatar || '/favicon.svg'}
+                alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
+                class="avatar-lg flex-shrink-0"
+              />
 
-          <section class="bio-section">
-            <h2>Bio</h2>
-            <p>{user.bio ?? 'No bio available.'}</p>
-          </section>
+              <div class="flex-1">
+                <h1 class="text-3xl font-bold mb-2">{user.name ?? 'Unnamed User'}</h1>
+                <p class="text-slate-400 mb-4 flex gap-2 text-sm">
+                  <span class="font-medium">{user.major ?? 'Undeclared Major'}</span>
+                  <span>•</span>
+                  <span>{user.year ?? 'Year not provided'}</span>
+                </p>
 
-          <section class="interests-section">
-            <h2>Interest Tags</h2>
-            {interestTags.length > 0 ? (
-              <ul class="tags">
-                {interestTags.map((tag) => (
-                  <li>{tag}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>No interests shared yet.</p>
-            )}
-          </section>
+                {isOwnProfile ? (
+                  <button type="button" class="btn-primary text-sm">
+                    Edit Profile
+                  </button>
+                ) : null}
+              </div>
+            </section>
 
-          <section class="posts-section">
-            <h2>Recent Posts</h2>
-            {recentPosts.length > 0 ? (
-              <ul class="posts-list">
-                {recentPosts.map((post) => (
-                  <li>
-                    <p class="post-title">{post.title ?? 'Untitled Post'}</p>
-                    <p class="post-meta">
-                      <span>{post.category ?? 'General'}</span>
-                      <span>•</span>
-                      <time datetime={post.date ?? post.createdAt ?? ''}>
-                        {post.date || post.createdAt
-                          ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString()
-                          : 'Date unavailable'}
-                      </time>
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No recent posts found.</p>
-            )}
-          </section>
-        </>
-      )
-    }
+            {/* Bio Section */}
+            <section class="card mb-6">
+              <h2 class="text-xl font-bold mb-3">Bio</h2>
+              <p class="text-slate-300">{user.bio ?? 'No bio available.'}</p>
+            </section>
+
+            {/* Interests Section */}
+            <section class="card mb-6">
+              <h2 class="text-xl font-bold mb-3">Interest Tags</h2>
+              {interestTags.length > 0 ? (
+                <ul class="flex flex-wrap gap-2">
+                  {interestTags.map((tag) => (
+                    <li class="badge badge-academic text-xs">{tag}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="text-slate-400 text-sm">No interests shared yet.</p>
+              )}
+            </section>
+
+            {/* Recent Posts Section */}
+            <section class="card mb-6">
+              <h2 class="text-xl font-bold mb-4">Recent Posts</h2>
+              {recentPosts.length > 0 ? (
+                <ul class="space-y-3">
+                  {recentPosts.map((post, index) => (
+                    <li class={`${index > 0 ? 'pt-3 border-t border-slate-600' : ''}`}>
+                      <p class="font-semibold text-text-primary mb-1">{post.title ?? 'Untitled Post'}</p>
+                      <p class="text-slate-400 text-sm flex gap-2">
+                        <span class="badge badge-social text-xs">{post.category ?? 'General'}</span>
+                        <time datetime={post.date ?? post.createdAt ?? ''}>
+                          {post.date || post.createdAt
+                            ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString()
+                            : 'Date unavailable'}
+                        </time>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="text-slate-400 text-sm">No recent posts found.</p>
+              )}
+            </section>
+          </>
+        )
+      }
+    </div>
   </main>
 </Layout>
-
-<style>
-  .profile-page {
-    max-width: 860px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .profile-header,
-  .bio-section,
-  .interests-section,
-  .posts-section,
-  .not-found {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    background: #fff;
-  }
-
-  .profile-header {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .avatar {
-    width: 88px;
-    height: 88px;
-    object-fit: cover;
-    border-radius: 9999px;
-    border: 1px solid #d1d5db;
-  }
-
-  .header-info h1 {
-    margin: 0 0 0.35rem;
-  }
-
-  .meta {
-    margin: 0 0 0.65rem;
-    color: #4b5563;
-    font-size: 0.9rem;
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
-  }
-
-  h2 {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
-  }
-
-  .bio-section p,
-  .interests-section p,
-  .posts-section p,
-  .not-found p {
-    margin: 0;
-  }
-
-  .tags {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  .tags li {
-    font-size: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 9999px;
-    padding: 0.1rem 0.45rem;
-    color: #374151;
-  }
-
-  .posts-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .posts-list li {
-    border-top: 1px solid #f3f4f6;
-    padding-top: 0.6rem;
-  }
-
-  .posts-list li:first-child {
-    border-top: 0;
-    padding-top: 0;
-  }
-
-  .post-title {
-    margin: 0 0 0.25rem;
-    font-weight: 600;
-  }
-
-  .post-meta {
-    margin: 0;
-    color: #4b5563;
-    font-size: 0.85rem;
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
-  }
-
-  .edit-button {
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    border-radius: 0.5rem;
-    padding: 0.45rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-  }
-
-  .edit-button:hover {
-    background: #f9fafb;
-  }
-</style>
