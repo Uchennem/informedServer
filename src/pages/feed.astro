@@ -62,137 +62,63 @@ try {
 ---
 
 <Layout>
-  <main class="feed-layout">
-    <section class="feed">
-      <h1>Feed</h1>
+  <main class="min-h-screen bg-slate-900 text-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Feed Section */}
+      <section class="lg:col-span-2">
+        <h1 class="text-3xl font-bold mb-6">Feed</h1>
 
-      {
-        posts.length > 0 ? (
-          posts.map((post) => <PostCard post={post} />)
-        ) : (
-          <p>No posts available.</p>
-        )
-      }
-    </section>
+        {
+          posts.length > 0 ? (
+            posts.map((post) => <PostCard post={post} />)
+          ) : (
+            <div class="card text-center py-12">
+              <p class="text-slate-400">No posts available.</p>
+            </div>
+          )
+        }
+      </section>
 
-    <aside class="people-discovery" aria-label="Students You Might Know">
-      <h2>Students You Might Know</h2>
+      {/* People Discovery Sidebar */}
+      <aside class="lg:col-span-1" aria-label="Students You Might Know">
+        <div class="card sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <h2 class="text-xl font-bold mb-4">Students You Might Know</h2>
 
-      {
-        matches.length > 0 ? (
-          matches.map((match) => {
-            const userId = match.id ?? match._id ?? '';
-            const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
+          {
+            matches.length > 0 ? (
+              matches.map((match, index) => {
+                const userId = match.id ?? match._id ?? '';
+                const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
 
-            return (
-              <article class="match-card">
-                <p class="name">{match.name}</p>
-                <p class="major">{match.major ?? 'Undeclared'}</p>
+                return (
+                  <article class={`flex flex-col gap-2 pb-4 ${index > 0 ? 'pt-4 border-t border-slate-600' : ''}`}>
+                    <p class="font-semibold text-text-primary">{match.name}</p>
+                    <p class="text-sm text-slate-400">{match.major ?? 'Undeclared'}</p>
 
-                {interestTags.length > 0 ? (
-                  <ul class="tags">
-                    {interestTags.map((tag) => (
-                      <li>{tag}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p class="no-tags">No shared interests yet</p>
-                )}
+                    {interestTags.length > 0 ? (
+                      <ul class="flex flex-wrap gap-2">
+                        {interestTags.map((tag) => (
+                          <li class="badge badge-social text-xs">{tag}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p class="text-xs text-slate-400 italic">No shared interests yet</p>
+                    )}
 
-                <ConnectButton client:load userId={userId} />
-              </article>
-            );
-          })
-        ) : (
-          <p>No suggestions right now.</p>
-        )
-      }
-    </aside>
+                    <div class="mt-2">
+                      <ConnectButton client:load userId={userId} />
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div class="text-center py-8">
+                <p class="text-sm text-slate-400">No suggestions right now.</p>
+              </div>
+            )
+          }
+        </div>
+      </aside>
+    </div>
   </main>
 </Layout>
-
-<style>
-  .feed-layout {
-    max-width: 1080px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 1.25rem;
-  }
-
-  .feed {
-    min-width: 0;
-  }
-
-  .feed h1 {
-    margin: 0 0 1rem;
-  }
-
-  .people-discovery {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    height: fit-content;
-  }
-
-  .people-discovery h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1rem;
-  }
-
-  .match-card {
-    border-top: 1px solid #f3f4f6;
-    padding-top: 0.75rem;
-    margin-top: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-  }
-
-  .match-card:first-of-type {
-    border-top: 0;
-    padding-top: 0;
-    margin-top: 0;
-  }
-
-  .name {
-    margin: 0;
-    font-weight: 600;
-  }
-
-  .major {
-    margin: 0;
-    color: #4b5563;
-    font-size: 0.9rem;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .tags li {
-    font-size: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 9999px;
-    padding: 0.1rem 0.45rem;
-    color: #374151;
-  }
-
-  .no-tags {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #6b7280;
-  }
-
-  @media (max-width: 960px) {
-    .feed-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

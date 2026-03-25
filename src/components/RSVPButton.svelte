@@ -8,21 +8,6 @@
   }
 </script>
 
-<button type="button" on:click={handleClick}>
+<button type="button" on:click={handleClick} class="btn-primary text-sm">
   RSVP ({count})
 </button>
-
-<style>
-  button {
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    border-radius: 0.5rem;
-    padding: 0.45rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-  }
-
-  button:hover {
-    background: #f9fafb;
-  }
-</style>

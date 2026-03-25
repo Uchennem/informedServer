@@ -28,47 +28,41 @@ try {
 ---
 
 <Layout>
-  <main class="groups-page">
-    <h1>Groups</h1>
+  <main class="min-h-screen bg-slate-900 text-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-8">Groups</h1>
 
-    {
-      groups.length > 0 ? (
-        groups.map((group) => {
-          const groupId = group.id ?? group._id ?? '';
-          return (
-            <GroupCard
-              group={{
-                id: groupId,
-                name: group.name,
-                description: group.description,
-                category: group.category,
-                memberCount: group.memberCount,
-              }}
-            >
-              <JoinButton
-                client:load
-                groupId={groupId}
-                isMember={group.isMember ?? false}
-                memberCount={group.memberCount ?? 0}
-              />
-            </GroupCard>
-          );
-        })
-      ) : (
-        <p>No groups available.</p>
-      )
-    }
+      {
+        groups.length > 0 ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groups.map((group) => {
+              const groupId = group.id ?? group._id ?? '';
+              return (
+                <GroupCard
+                  group={{
+                    id: groupId,
+                    name: group.name,
+                    description: group.description,
+                    category: group.category,
+                    memberCount: group.memberCount,
+                  }}
+                >
+                  <JoinButton
+                    client:load
+                    groupId={groupId}
+                    isMember={group.isMember ?? false}
+                    memberCount={group.memberCount ?? 0}
+                  />
+                </GroupCard>
+              );
+            })}
+          </div>
+        ) : (
+          <div class="card text-center py-12">
+            <p class="text-slate-400">No groups available.</p>
+          </div>
+        )
+      }
+    </div>
   </main>
 </Layout>
-
-<style>
-  .groups-page {
-    max-width: 860px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-  }
-
-  h1 {
-    margin: 0 0 1rem;
-  }
-</style>

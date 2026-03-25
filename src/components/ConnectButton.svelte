@@ -11,22 +11,6 @@
   }
 </script>
 
-<button type="button" on:click={goToProfile}>
-  Connect
+<button type="button" on:click={goToProfile} class="btn-primary text-xs py-1 px-2">
+  View Profile
 </button>
-
-<style>
-  button {
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    border-radius: 0.5rem;
-    padding: 0.4rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    align-self: flex-start;
-  }
-
-  button:hover {
-    background: #f9fafb;
-  }
-</style>
