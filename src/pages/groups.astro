@@ -41,31 +41,43 @@ const myGroups = groups.filter((group) => group.isMember);
 ---
 
 <Layout>
-  <main class="min-h-screen bg-slate-900 pb-20 md:pb-8">
-    <div class="max-w-6xl mx-auto px-4 py-6 md:py-8">
-      <h1 class="text-3xl font-bold mb-6">Groups</h1>
+  <main class="min-h-screen pb-20 md:pb-8">
+    <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      {/* Header */}
+      <div class="mb-12">
+        <h1 class="text-5xl font-bold text-slate-100 font-display uppercase tracking-wider mb-2">Student Organizations</h1>
+        <p class="text-slate-400 text-lg">Find your community and join groups that match your interests</p>
+      </div>
 
-      <section class="mb-8">
-        <h2 class="mb-3 text-lg font-bold text-slate-100">My Groups</h2>
-        {myGroups.length > 0 ? (
-          <div class="overflow-x-auto">
-            <div class="flex min-w-max gap-2">
+      {/* My Groups Section */}
+      {myGroups.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-4 flex items-center gap-3">
+            <div class="w-1 h-8 bg-gradient-to-b from-nc-accent-primary to-nc-accent-secondary rounded-full"></div>
+            My Groups
+          </h2>
+          <div class="overflow-x-auto pb-2">
+            <div class="flex gap-3 min-w-max">
               {myGroups.map((group) => (
-                <span class="badge badge-event text-xs">{group.name}</span>
+                <div class="chip bg-nc-accent-primary/15 text-nc-accent-primary border border-nc-accent-primary/30 text-sm font-semibold flex-shrink-0 hover:bg-nc-accent-primary/25 transition-all">
+                  ✓ {group.name}
+                </div>
               ))}
             </div>
           </div>
-        ) : (
-          <p class="text-sm text-slate-400">Join a group to see it pinned here.</p>
-        )}
-      </section>
+        </section>
+      )}
 
+      {/* Discover Groups Section */}
       <section>
-        <h2 class="mb-4 text-lg font-bold text-slate-100">Discover Groups</h2>
+        <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-6 flex items-center gap-3">
+          <div class="w-1 h-8 bg-gradient-to-b from-nc-accent-secondary to-nc-accent-primary rounded-full"></div>
+          Discover Groups
+        </h2>
 
         {
           groups.length > 0 ? (
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-container">
               {groups.map((group) => {
                 const groupId = group.id ?? group._id ?? '';
                 return (
@@ -89,8 +101,12 @@ const myGroups = groups.filter((group) => group.isMember);
               })}
             </div>
           ) : (
-            <div class="card text-center py-12">
-              <p class="text-slate-400">No groups available.</p>
+            <div class="card py-16 text-center border-2 border-dashed border-slate-600">
+              <svg class="w-12 h-12 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+              <p class="text-slate-300 font-semibold text-lg">No groups available yet</p>
+              <p class="mt-2 text-sm text-slate-400">Check back soon as more groups get created on campus</p>
             </div>
           )
         }

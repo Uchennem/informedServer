@@ -12,21 +12,54 @@ type Props = {
 };
 
 const { group } = Astro.props;
+
+// Category color palette
+const categoryGradients: Record<string, string> = {
+  'Academic': 'from-blue-600 to-blue-400',
+  'Social': 'from-pink-600 to-rose-400',
+  'Sports': 'from-green-600 to-emerald-400',
+  'Faith': 'from-purple-600 to-violet-400',
+  'Arts': 'from-orange-600 to-amber-400',
+  'General': 'from-slate-600 to-indigo-400',
+};
+
+const gradient = categoryGradients[group.category || 'General'] || categoryGradients['General'];
 ---
 
-<article class="card flex flex-col mb-0">
-  <div class="flex-1">
-    <h2 class="text-lg font-bold mb-2">{group.name}</h2>
-    {group.description ? <p class="text-slate-300 text-sm mb-3">{group.description}</p> : null}
-
-    <p class="text-slate-400 text-sm flex gap-2">
-      <span class="badge badge-social text-xs">{group.category ?? 'General'}</span>
-      <span>•</span>
-      <span>{group.memberCount ?? 0} members</span>
-    </p>
+<article class="card group overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-nc-accent-primary/30 hover:-translate-y-1">
+  {/* Colored Header Band */}
+  <div class={`h-16 bg-gradient-to-r ${gradient} opacity-90 group-hover:opacity-100 transition-opacity flex items-center px-6 relative overflow-hidden`}>
+    <div class="absolute inset-0 opacity-20 mix-blend-overlay">
+      <svg class="w-full h-full" viewBox="0 0 100 100">
+        <circle cx="20" cy="20" r="15" fill="white" opacity="0.1"/>
+        <circle cx="80" cy="80" r="20" fill="white" opacity="0.05"/>
+      </svg>
+    </div>
+    <h2 class="text-lg font-bold text-white font-display uppercase tracking-wider relative z-10">{group.name}</h2>
   </div>
 
-  <div class="mt-4 flex justify-end">
-    <slot />
+  {/* Content */}
+  <div class="flex-1 flex flex-col p-6">
+    {group.description ? (
+      <p class="text-slate-300 text-sm mb-4 line-clamp-2">{group.description}</p>
+    ) : null}
+
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      {group.category && (
+        <span class="chip text-xs bg-nc-accent-primary/20 text-nc-accent-primary font-semibold">
+          {group.category}
+        </span>
+      )}
+      <span class="text-xs text-slate-400 flex items-center gap-1">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 10a9 9 0 1-18 0 9 9 0 0118 0z"/>
+        </svg>
+        {group.memberCount ?? 0} members
+      </span>
+    </div>
+
+    <div class="mt-auto pt-4 border-t border-slate-700/50">
+      <slot />
+    </div>
   </div>
 </article>

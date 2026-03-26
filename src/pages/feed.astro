@@ -70,83 +70,106 @@ try {
 ---
 
 <Layout>
-  <main class="min-h-screen bg-slate-900 pb-20 md:pb-8">
-    <div class="max-w-6xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <main class="min-h-screen pb-20 md:pb-8">
+    <div class="max-w-7xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Feed Section */}
       <section class="lg:col-span-2">
-        <h1 class="text-3xl font-bold mb-6">Feed</h1>
+        {/* Header */}
+        <div class="mb-8">
+          <h1 class="text-5xl font-bold text-slate-100 font-display uppercase tracking-wider mb-2">Discover Events</h1>
+          <p class="text-slate-400 text-lg">Find and RSVP to campus events that match your interests</p>
+        </div>
 
-        <div class="mb-6 overflow-x-auto">
-          <div class="flex min-w-max gap-2">
-            {feedFilters.map((filter) => (
-              <button
-                type="button"
-                class={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
-                  filter === 'All'
-                    ? 'border-indigo-500 bg-indigo-500 text-white'
-                    : 'border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
+        {/* Category Filter Chips */}
+        <div class="mb-8 sticky top-0 bg-gradient-to-b from-nc-bg-root via-nc-bg-root to-nc-bg-root/50 backdrop-blur z-10 pb-4">
+          <div class="overflow-x-auto scrollbar-thin">
+            <div class="flex gap-2 min-w-max">
+              {feedFilters.map((filter) => (
+                <button
+                  type="button"
+                  class={`chip text-xs font-semibold uppercase tracking-wide transition-all duration-200 flex-shrink-0 ${
+                    filter === 'All'
+                      ? 'bg-nc-accent-primary text-white shadow-lg shadow-nc-accent-primary/40 scale-105'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500'
+                  }`}
+                  data-filter={filter}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {
-          posts.length > 0 ? (
-            posts.map((post) => <PostCard post={post} />)
-          ) : (
-            <div class="card text-center py-12">
-              <p class="text-slate-300 font-semibold">No posts available yet.</p>
-              <p class="mt-2 text-sm text-slate-400">Join groups or update your interests to personalize your feed.</p>
-              <div class="mt-5 flex justify-center gap-3">
-                <a href="/groups" class="btn-primary">Join Groups</a>
-                <a href="/people" class="btn-secondary">Find People</a>
+        {/* Posts List */}
+        <div class="space-y-4 stagger-container">
+          {
+            posts.length > 0 ? (
+              posts.map((post) => <PostCard post={post} />)
+            ) : (
+              <div class="card text-center py-16 border-2 border-dashed border-slate-600">
+                <svg class="w-12 h-12 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <p class="text-slate-300 font-semibold text-lg">No events yet</p>
+                <p class="mt-2 text-sm text-slate-400">Join groups or update your interests to find events matching your vibe</p>
+                <div class="mt-6 flex justify-center gap-3">
+                  <a href="/groups" class="btn-primary text-sm">Join Groups</a>
+                  <a href="/people" class="btn-secondary text-sm">Find People</a>
+                </div>
               </div>
-            </div>
-          )
-        }
+            )
+          }
+        </div>
       </section>
 
       {/* People Discovery Sidebar */}
       <aside class="lg:col-span-1" aria-label="Students You Might Know">
-        <div class="card sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto">
-          <h2 class="text-xl font-bold mb-4">Students You Might Know</h2>
+        <div class="sticky top-24">
+          <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-4">Connect</h2>
+          
+          <div class="card max-h-[calc(100vh-8rem)] overflow-y-auto">
+            {
+              matches.length > 0 ? (
+                matches.map((match, index) => {
+                  const userId = match.id ?? match._id ?? '';
+                  const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
 
-          {
-            matches.length > 0 ? (
-              matches.map((match, index) => {
-                const userId = match.id ?? match._id ?? '';
-                const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
+                  return (
+                    <div class={`flex flex-col gap-3 pb-4 transition-all duration-200 hover:bg-slate-700/30 p-3 rounded-lg ${index > 0 ? 'pt-4 border-t border-slate-600' : ''}`}>
+                      <div>
+                        <p class="font-bold text-slate-100 text-sm uppercase tracking-wide">{match.name}</p>
+                        <p class="text-xs text-slate-400">{match.major ?? 'Undeclared'}</p>
+                      </div>
 
-                return (
-                  <article class={`flex flex-col gap-2 pb-4 ${index > 0 ? 'pt-4 border-t border-slate-600' : ''}`}>
-                    <p class="font-semibold text-slate-100">{match.name}</p>
-                    <p class="text-sm text-slate-400">{match.major ?? 'Undeclared'}</p>
+                      {interestTags.length > 0 ? (
+                        <div class="flex flex-wrap gap-1">
+                          {interestTags.slice(0, 2).map((tag) => (
+                            <span class="chip text-xs bg-nc-accent-primary/20 text-nc-accent-primary">{tag}</span>
+                          ))}
+                          {interestTags.length > 2 && (
+                            <span class="chip text-xs text-slate-400">+{interestTags.length - 2}</span>
+                          )}
+                        </div>
+                      ) : null}
 
-                    {interestTags.length > 0 ? (
-                      <ul class="flex flex-wrap gap-2">
-                        {interestTags.map((tag) => (
-                          <li class="badge badge-social text-xs">{tag}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p class="text-xs text-slate-400 italic">No shared interests yet</p>
-                    )}
-
-                    <div class="mt-2">
-                      <ConnectButton client:load userId={userId} />
+                      <div class="mt-1">
+                        <ConnectButton client:load userId={userId} />
+                      </div>
                     </div>
-                  </article>
-                );
-              })
-            ) : (
-              <div class="text-center py-8">
-                <p class="text-sm text-slate-400">No suggestions right now.</p>
-              </div>
-            )
-          }
+                  );
+                })
+              ) : (
+                <div class="text-center py-8">
+                  <svg class="w-8 h-8 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                  </svg>
+                  <p class="text-xs text-slate-400">No suggestions right now</p>
+                  <p class="text-xs text-slate-500 mt-1">Update your profile to get better matches</p>
+                </div>
+              )
+            }
+          </div>
         </div>
       </aside>
     </div>
