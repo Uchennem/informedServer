@@ -2,11 +2,14 @@
 import RSVPButton from './RSVPButton.svelte';
 
 type Post = {
+  id?: string;
   title: string;
+  body?: string;
   author: string;
   category: string;
   rsvpCount: number;
   date: string;
+  location?: string;
 };
 
 type Props = {
@@ -28,6 +31,12 @@ const { post } = Astro.props;
     <span>•</span>
     <time datetime={post.date}>{new Date(post.date).toLocaleDateString()}</time>
   </p>
+
+  {post.body ? <p class="mb-4 text-sm leading-6 text-slate-300">{post.body}</p> : null}
+
+  {post.location ? (
+    <p class="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{post.location}</p>
+  ) : null}
 
   <div class="flex justify-between items-center gap-4">
     <p class="text-slate-400 font-semibold text-sm">RSVPs: {post.rsvpCount}</p>

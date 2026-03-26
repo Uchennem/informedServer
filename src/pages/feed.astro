@@ -7,10 +7,12 @@ import { buildServerApiUrl } from '../lib/api';
 type Post = {
   id: string;
   title: string;
+  body?: string;
   author: string;
   category: string;
   rsvpCount: number;
   date: string;
+  location?: string;
 };
 
 type MatchUser = {
@@ -22,9 +24,9 @@ type MatchUser = {
   sharedInterests?: string[];
 };
 
-const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
 const feedFilters = ['All', 'Social', 'Academic', 'Sports', 'Faith', 'Arts'];
+const selectedCategory = Astro.url.searchParams.get('category') ?? 'All';
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
 
 if (!authCookieHeader.includes('better-auth.session_token')) {
@@ -35,7 +37,13 @@ let posts: Post[] = [];
 let matches: MatchUser[] = [];
 
 try {
-  const response = await fetch(buildServerApiUrl('/api/posts', Astro.url), {
+  const postsUrl = new URL(buildServerApiUrl('/api/posts', Astro.url));
+
+  if (selectedCategory !== 'All') {
+    postsUrl.searchParams.set('category', selectedCategory);
+  }
+
+  const response = await fetch(postsUrl.toString(), {
     headers: {
       cookie: authCookieHeader,
     },
@@ -50,11 +58,7 @@ try {
 }
 
 try {
-  if (!baseUrl) {
-    throw new Error('Missing PUBLIC_API_BASE_URL');
-  }
-
-  const response = await fetch(import.meta.env.PUBLIC_API_BASE_URL + '/api/users/matches', {
+  const response = await fetch(buildServerApiUrl('/api/users/matches', Astro.url), {
     headers: {
       cookie: request.headers.get('cookie') ?? '',
     },
@@ -79,18 +83,23 @@ try {
         <div class="mb-6 overflow-x-auto">
           <div class="flex min-w-max gap-2">
             {feedFilters.map((filter) => (
-              <button
-                type="button"
+              <a
+                href={filter === 'All' ? '/feed' : `/feed?category=${encodeURIComponent(filter)}`}
                 class={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
-                  filter === 'All'
+                  filter === selectedCategory
                     ? 'border-indigo-500 bg-indigo-500 text-white'
                     : 'border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700'
                 }`}
               >
                 {filter}
-              </button>
+              </a>
             ))}
           </div>
+        </div>
+
+        <div class="mb-4 flex items-center justify-between gap-4 text-sm text-slate-400">
+          <p>{selectedCategory === 'All' ? 'All campus activities' : `${selectedCategory} activities`}</p>
+          <p>{posts.length} {posts.length === 1 ? 'result' : 'results'}</p>
         </div>
 
         {
@@ -98,8 +107,12 @@ try {
             posts.map((post) => <PostCard post={post} />)
           ) : (
             <div class="card text-center py-12">
-              <p class="text-slate-300 font-semibold">No posts available yet.</p>
-              <p class="mt-2 text-sm text-slate-400">Join groups or update your interests to personalize your feed.</p>
+              <p class="text-slate-300 font-semibold">No activities found.</p>
+              <p class="mt-2 text-sm text-slate-400">
+                {selectedCategory === 'All'
+                  ? 'Join groups or update your interests to personalize your feed.'
+                  : `There are no ${selectedCategory.toLowerCase()} posts right now.`}
+              </p>
               <div class="mt-5 flex justify-center gap-3">
                 <a href="/groups" class="btn-primary">Join Groups</a>
                 <a href="/people" class="btn-secondary">Find People</a>
