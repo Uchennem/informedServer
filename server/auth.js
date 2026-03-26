@@ -23,6 +23,7 @@ const mongoClient = new MongoClient(MONGODB_URI);
 const database = mongoClient.db();
 
 export const appDatabase = database;
+export const usersCollection = database.collection("user");
 export const profilesCollection = database.collection("profiles");
 export const groupMembershipsCollection = database.collection("groupMemberships");
 

@@ -30,6 +30,16 @@ const posts = [
 ];
 
 router.get("/", (req, res) => {
+	const { author } = req.query;
+
+	// Filter posts by author if provided
+	if (author) {
+		const filteredPosts = posts.filter(
+			(post) => post.author.toLowerCase() === author.toLowerCase()
+		);
+		return res.json(filteredPosts);
+	}
+
 	res.json(posts);
 });
 
