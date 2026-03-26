@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import styles from './register.module.css';
 
 // Check if user is already authenticated by looking for auth cookie
 const authCookie = Astro.request.headers.get('cookie')?.includes('better-auth.session_token');
@@ -14,117 +13,147 @@ const eyeSlashIconUrl = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/ico
 ---
 
 <Layout>
-  <div class={styles.container}>
-    <div class={styles.card}>
-      <h1>Create Account</h1>
-      <form id="registerForm" class={styles.form}>
-        <div class={styles.formGroup}>
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="student@university.edu"
-            required
-          />
-          <span id="emailError" class={styles.error}></span>
+  <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+      {/* Decorative signal beam background */}
+      <div class="absolute inset-0 -z-10 opacity-30">
+        <div class="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-nc-accent-primary via-transparent to-transparent rounded-full blur-3xl opacity-20"></div>
+        <div class="absolute bottom-20 right-10 w-64 h-64 bg-gradient-to-tl from-nc-accent-secondary via-transparent to-transparent rounded-full blur-3xl opacity-15"></div>
+      </div>
+
+      {/* Auth Card */}
+      <div class="card p-8 sm:p-10">
+        <div class="mb-8 text-center">
+          <h1 class="text-4xl font-bold text-nc-accent-primary mb-2">CREATE ACCOUNT</h1>
+          <p class="text-nc-text-muted text-sm">Join your campus community today</p>
         </div>
 
-        <div class={styles.formGroup}>
-          <label for="name">Full Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            placeholder="John Doe"
-            required
-          />
-          <span id="nameError" class={styles.error}></span>
-        </div>
-
-        <div class={styles.formGroup}>
-          <label for="major">Major</label>
-          <input
-            type="text"
-            id="major"
-            name="major"
-            placeholder="Computer Science"
-            required
-          />
-          <span id="majorError" class={styles.error}></span>
-        </div>
-
-        <div class={styles.formGroup}>
-          <label for="year">Year</label>
-          <select id="year" name="year" required>
-            <option value="">Select Year</option>
-            <option value="freshman">Freshman</option>
-            <option value="sophomore">Sophomore</option>
-            <option value="junior">Junior</option>
-            <option value="senior">Senior</option>
-            <option value="graduate">Graduate</option>
-          </select>
-          <span id="yearError" class={styles.error}></span>
-        </div>
-
-        <div class={styles.formGroup}>
-          <label for="password">Password</label>
-          <div class={styles.passwordInputWrapper}>
+        <form id="registerForm" class="space-y-5">
+          {/* Email field */}
+          <div>
+            <label for="email" class="block text-sm font-semibold text-nc-text-primary mb-2">Email Address</label>
             <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Enter a strong password"
+              type="email"
+              id="email"
+              name="email"
+              placeholder="student@university.edu"
+              class="w-full"
               required
             />
-            <button
-              type="button"
-              id="togglePassword"
-              class={styles.passwordToggle}
-              aria-label="Toggle password visibility"
-              data-eye-icon={eyeIconUrl}
-              data-eye-slash-icon={eyeSlashIconUrl}
-            >
-              <img 
-                id="toggleIcon" 
-                src={eyeIconUrl} 
-                alt="Show password" 
-                width="20" 
-                height="20"
+            <span id="emailError" class="block text-nc-destructive text-xs mt-1"></span>
+          </div>
+
+          {/* Name field */}
+          <div>
+            <label for="name" class="block text-sm font-semibold text-nc-text-primary mb-2">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="John Doe"
+              class="w-full"
+              required
+            />
+            <span id="nameError" class="block text-nc-destructive text-xs mt-1"></span>
+          </div>
+
+          {/* Major field */}
+          <div>
+            <label for="major" class="block text-sm font-semibold text-nc-text-primary mb-2">Major</label>
+            <input
+              type="text"
+              id="major"
+              name="major"
+              placeholder="Computer Science"
+              class="w-full"
+              required
+            />
+            <span id="majorError" class="block text-nc-destructive text-xs mt-1"></span>
+          </div>
+
+          {/* Year field */}
+          <div>
+            <label for="year" class="block text-sm font-semibold text-nc-text-primary mb-2">Year</label>
+            <select id="year" name="year" class="w-full" required>
+              <option value="">Select Your Year</option>
+              <option value="freshman">Freshman</option>
+              <option value="sophomore">Sophomore</option>
+              <option value="junior">Junior</option>
+              <option value="senior">Senior</option>
+              <option value="graduate">Graduate</option>
+            </select>
+            <span id="yearError" class="block text-nc-destructive text-xs mt-1"></span>
+          </div>
+
+          {/* Password field */}
+          <div>
+            <label for="password" class="block text-sm font-semibold text-nc-text-primary mb-2">Password</label>
+            <div class="relative mb-3">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                class="w-full pr-12"
+                required
               />
-            </button>
-          </div>
-          <span id="passwordError" class={styles.error}></span>
-          <div class={styles.passwordRequirements}>
-            <p id="requirement-length" class={styles.requirementItem}>
-              <span class={styles.requirementIcon}>✗</span> At least 8 characters
-            </p>
-            <p id="requirement-uppercase" class={styles.requirementItem}>
-              <span class={styles.requirementIcon}>✗</span> At least one uppercase letter
-            </p>
-            <p id="requirement-lowercase" class={styles.requirementItem}>
-              <span class={styles.requirementIcon}>✗</span> At least one lowercase letter
-            </p>
-            <p id="requirement-number" class={styles.requirementItem}>
-              <span class={styles.requirementIcon}>✗</span> At least one number
-            </p>
-            <p id="requirement-special" class={styles.requirementItem}>
-              <span class={styles.requirementIcon}>✗</span> At least one special character (! @ # $ % ^ & *)
-            </p>
-          </div>
-        </div>
+              <button
+                type="button"
+                id="togglePassword"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-nc-text-muted hover:text-nc-accent-primary transition-colors"
+                aria-label="Toggle password visibility"
+                data-eye-icon={eyeIconUrl}
+                data-eye-slash-icon={eyeSlashIconUrl}
+              >
+                <img 
+                  id="toggleIcon" 
+                  src={eyeIconUrl} 
+                  alt="Show password" 
+                  width="18" 
+                  height="18"
+                />
+              </button>
+            </div>
 
-        <button type="submit" id="submitBtn" class={styles.submitBtn}>
-          <span id="submitText">Create Account</span>
-        </button>
+            {/* Password requirements */}
+            <div class="space-y-2 mb-3 p-3 rounded-lg bg-nc-bg-elevated/50 border border-nc-border-subtle">
+              <p id="requirement-length" class="text-xs text-nc-text-muted flex items-center gap-2">
+                <span id="req-length-icon" class="text-nc-destructive">✗</span> At least 8 characters
+              </p>
+              <p id="requirement-uppercase" class="text-xs text-nc-text-muted flex items-center gap-2">
+                <span id="req-uppercase-icon" class="text-nc-destructive">✗</span> One uppercase letter
+              </p>
+              <p id="requirement-lowercase" class="text-xs text-nc-text-muted flex items-center gap-2">
+                <span id="req-lowercase-icon" class="text-nc-destructive">✗</span> One lowercase letter
+              </p>
+              <p id="requirement-number" class="text-xs text-nc-text-muted flex items-center gap-2">
+                <span id="req-number-icon" class="text-nc-destructive">✗</span> One number
+              </p>
+              <p id="requirement-special" class="text-xs text-nc-text-muted flex items-center gap-2">
+                <span id="req-special-icon" class="text-nc-destructive">✗</span> One special character (! @ # $ % ^ & *)
+              </p>
+            </div>
+            <span id="passwordError" class="block text-nc-destructive text-xs mb-3"></span>
+          </div>
 
-        <p class={styles.loginLink}>
-          Already have an account? <a href="/login">Sign in</a>
+          {/* Submit button */}
+          <button type="submit" id="submitBtn" class="btn-primary w-full mt-6">
+            <span id="submitText">Create Account</span>
+          </button>
+        </form>
+
+        {/* Messages */}
+        <div id="successMessage" class="mt-4 p-3 rounded-lg bg-nc-success/10 text-nc-success text-sm hidden"></div>
+        <div id="errorMessage" class="mt-4 p-3 rounded-lg bg-nc-destructive/10 text-nc-destructive text-sm hidden"></div>
+
+        {/* Sign in link */}
+        <p class="text-center text-nc-text-muted text-sm mt-6">
+          Already have an account? 
+          <a href="/login" class="text-nc-accent-primary font-semibold hover:text-nc-accent-secondary transition-colors">
+            Sign in
+          </a>
         </p>
-      </form>
-
-      <div id="successMessage" class={styles.successMessage}></div>
-      <div id="errorMessage" class={styles.errorMessage}></div>
+      </div>
     </div>
   </div>
 </Layout>

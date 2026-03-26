@@ -1,51 +1,293 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
-html,
-body {
-  @apply bg-slate-900 text-slate-200;
-  font-family: Inter, system-ui, sans-serif;
+/* ===== CSS Variables - Night Campus Signal Theme ===== */
+:root {
+  /* Background colors */
+  --nc-bg-root: #050712;
+  --nc-bg-elevated: #101426;
+  --nc-bg-card: #15182A;
+  --nc-border-subtle: #262B3F;
+
+  /* Accent colors */
+  --nc-accent-primary: #7C5CFF;
+  --nc-accent-secondary: #F4B45A;
+  --nc-success: #33D9A0;
+  --nc-destructive: #FF4B70;
+
+  /* Text colors */
+  --nc-text-primary: #F9FAFF;
+  --nc-text-muted: #9CA3C9;
+  --nc-text-subtle: #6B7288;
+
+  /* Semantic colors */
+  --nc-info: #5B9EFF;
+  --nc-warning: #FFB84D;
 }
 
-/* Scrollbar styling for dark mode */
+/* ===== Base Styles ===== */
+html,
+body,
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--nc-bg-root);
+  color: var(--nc-text-primary);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+  /* Animated background with signal beams */
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(124, 92, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(244, 180, 90, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(51, 217, 160, 0.06) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: gradientShift 40s ease-in-out infinite;
+  background-attachment: fixed;
+}
+
+/* ===== Typography ===== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nc-text-primary);
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: 0.03em;
+  color: var(--nc-text-primary);
+}
+
+h3 {
+  font-size: 1.5rem;
+  color: var(--nc-text-primary);
+}
+
+p {
+  margin-bottom: 1rem;
+  color: var(--nc-text-muted);
+}
+
+a {
+  color: var(--nc-accent-primary);
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+a:hover {
+  color: var(--nc-accent-secondary);
+  text-decoration: underline;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--nc-accent-primary);
+  color: white;
+}
+
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  @apply w-2 h-2;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-800;
+  background: var(--nc-bg-elevated);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-600 rounded-full hover:bg-slate-400;
+  background: linear-gradient(180deg, var(--nc-accent-primary), var(--nc-accent-secondary));
+  border-radius: 5px;
+  transition: all 200ms ease;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nc-accent-primary);
+  box-shadow: 0 0 10px rgba(124, 92, 255, 0.4);
 }
 
-/* Selection color */
-::selection {
-  @apply bg-indigo-500 text-white;
-}
-
-/* Form inputs */
+/* ===== Form Elements ===== */
 input,
 textarea,
 select {
-  @apply bg-slate-800 border border-slate-600 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 transition-all;
+  background-color: var(--nc-bg-elevated);
+  border: 1px solid var(--nc-border-subtle);
+  color: var(--nc-text-primary);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: all 200ms ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--nc-accent-primary);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.1), inset 0 0 0 1px var(--nc-accent-primary);
+  background-color: rgba(124, 92, 255, 0.02);
 }
 
 input::placeholder,
 textarea::placeholder {
-  @apply text-slate-400;
+  color: var(--nc-text-subtle);
 }
 
-/* Focus visible for accessibility */
-a:focus-visible,
-button:focus-visible {
-  @apply outline-2 outline-offset-2 outline-indigo-500;
+/* Input pills for modern feel */
+input[type='email'],
+input[type='password'],
+input[type='text'] {
+  border-radius: 2rem;
+  padding: 0.875rem 1.25rem;
+}
+
+/* ===== Interactive Elements ===== */
+button,
+a.btn,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+}
+
+button:focus-visible,
+a.btn:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--nc-accent-primary);
+  outline-offset: 2px;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes signalPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes kineticPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Staggered list animations */
+.stagger-container > * {
+  animation: slideUp 0.5s ease-out backwards;
+}
+
+.stagger-container > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-container > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger-container > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger-container > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger-container > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger-container > *:nth-child(n + 6) {
+  animation-delay: calc(50ms * (var(--index, 6) - 5));
+}
+
+/* ===== Accessibility ===== */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  :root {
+    --nc-accent-primary: #9d78ff;
+    --nc-accent-secondary: #ffd966;
+  }
 }
