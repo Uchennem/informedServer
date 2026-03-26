@@ -2,6 +2,15 @@
 
 Informed is an Astro + Svelte frontend with an Express + Better Auth API.
 
+Astro renders the application pages and Express serves the API. Better Auth is mounted on the Express server under `/api/auth/*`.
+
+## Runtime Architecture
+
+- Astro owns page rendering and static assets.
+- Express owns `/api/*` endpoints.
+- Better Auth owns `/api/auth/*`.
+- Protected application APIs live under `/api/users`, `/api/groups`, and `/api/posts`.
+
 ## Local Development
 
 Install dependencies:
@@ -18,6 +27,8 @@ npm run dev
 
 - Frontend (Astro): `http://localhost:4321`
 - API (Express): `http://localhost:3000`
+
+Astro proxies `/api/*` requests to Express during development.
 
 ## Build Commands
 
@@ -70,3 +81,10 @@ CORS_ORIGIN=http://localhost:4321
 ```
 
 For production, set `PUBLIC_API_BASE_URL` to your Render API URL and set `FRONTEND_URL`/`CORS_ORIGIN` to your Netlify URL.
+
+## Auth and Profile Flow
+
+1. Browser auth requests use the Better Auth client from `src/lib/authClient.ts`.
+2. Registration creates the Better Auth account first.
+3. Registration then saves app profile fields to `/api/users/profile`.
+4. Protected APIs resolve the session through Better Auth middleware before responding.

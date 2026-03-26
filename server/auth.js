@@ -22,10 +22,19 @@ if (!BETTER_AUTH_SECRET) {
 const mongoClient = new MongoClient(MONGODB_URI);
 const database = mongoClient.db();
 
+export const appDatabase = database;
+export const profilesCollection = database.collection("profiles");
+export const groupMembershipsCollection = database.collection("groupMemberships");
+
 export const auth = betterAuth({
   database: mongodbAdapter(database, { client: mongoClient }),
   secret: BETTER_AUTH_SECRET,
+  emailAndPassword: {
+    enabled: true,
+  },
   trustedOrigins,
+  plugins: [],
+  appName: "Informed",
 });
 
 export default auth;

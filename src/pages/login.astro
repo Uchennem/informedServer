@@ -1,0 +1,78 @@
+---
+import Layout from '../layouts/Layout.astro';
+import styles from './login.module.css';
+
+// Check if user is already authenticated by looking for auth cookie
+const authCookie = Astro.request.headers.get('cookie')?.includes('better-auth.session_token');
+
+if (authCookie) {
+  return Astro.redirect('/feed');
+}
+
+const eyeIconUrl = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/icons/eye.svg';
+const eyeSlashIconUrl = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/icons/eye-slash.svg';
+---
+
+<Layout>
+  <div class={styles.container}>
+    <div class={styles.card}>
+      <h1>Sign In</h1>
+      <form id="loginForm" class={styles.form}>
+        <div class={styles.formGroup}>
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="student@university.edu"
+            required
+          />
+          <span id="emailError" class={styles.error}></span>
+        </div>
+
+        <div class={styles.formGroup}>
+          <label for="password">Password</label>
+          <div class={styles.passwordInputWrapper}>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              required
+            />
+            <button
+              type="button"
+              id="togglePassword"
+              class={styles.passwordToggle}
+              aria-label="Toggle password visibility"
+              data-eye-icon={eyeIconUrl}
+              data-eye-slash-icon={eyeSlashIconUrl}
+            >
+              <img 
+                id="toggleIcon" 
+                src={eyeIconUrl} 
+                alt="Show password" 
+                width="20" 
+                height="20"
+              />
+            </button>
+          </div>
+          <span id="passwordError" class={styles.error}></span>
+        </div>
+
+        <button type="submit" id="submitBtn" class={styles.submitBtn}>
+          <span id="submitText">Sign In</span>
+        </button>
+
+        <p class={styles.registerLink}>
+          Don't have an account? <a href="/register">Create one</a>
+        </p>
+      </form>
+
+      <div id="successMessage" class={styles.successMessage}></div>
+      <div id="errorMessage" class={styles.errorMessage}></div>
+    </div>
+  </div>
+</Layout>
+
+<script src="../js/login.ts"></script>
