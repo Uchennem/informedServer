@@ -12,5 +12,15 @@ const adapter = deployTarget === 'netlify' ? netlify() : node({ mode: 'standalon
 export default defineConfig({
   output: 'server',
   adapter,
-  integrations: [svelte()]
+  integrations: [svelte()],
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+      },
+    },
+  },
 });

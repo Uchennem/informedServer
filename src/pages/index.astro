@@ -1,72 +1,12 @@
 ---
-import Layout from '../layouts/Layout.astro';
+// Check if user is authenticated by looking for auth cookie
+const authCookie = Astro.request.headers.get('cookie')?.includes('better-auth.session_token');
+
+if (authCookie) {
+  // If authenticated, redirect to feed
+  return Astro.redirect('/feed');
+} else {
+  // If not authenticated, redirect to login
+  return Astro.redirect('/login');
+}
 ---
-
-<Layout>
-	<main class="min-h-screen bg-slate-900 text-slate-200 flex flex-col items-center justify-center px-4">
-		{/* Hero Section */}
-		<section class="text-center max-w-2xl mb-12">
-			<h1 class="text-4xl md:text-5xl font-extrabold mb-4">
-				Informed
-			</h1>
-			<p class="text-lg text-slate-300 mb-8">
-				Connect with students. Discover events. Find your people.
-			</p>
-			<p class="text-sm text-slate-400 mb-12">
-				A social platform built for college students by college students.
-			</p>
-		</section>
-
-		{/* Navigation Cards */}
-		<section class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl">
-			{/* Feed Card */}
-			<a
-				href="/feed"
-				class="group card hover:shadow-xl hover:border-indigo-500 transition-all duration-normal"
-			>
-				<div class="mb-4 text-3xl">📰</div>
-				<h2 class="text-xl font-bold mb-2 group-hover:text-indigo-400 transition-colors">
-					Feed
-				</h2>
-				<p class="text-slate-400 text-sm">
-					Discover events and activities happening around you.
-				</p>
-			</a>
-
-			{/* Groups Card */}
-			<a
-				href="/groups"
-				class="group card hover:shadow-xl hover:border-indigo-500 transition-all duration-normal"
-			>
-				<div class="mb-4 text-3xl">👥</div>
-				<h2 class="text-xl font-bold mb-2 group-hover:text-indigo-400 transition-colors">
-					Groups
-				</h2>
-				<p class="text-slate-400 text-sm">
-					Join clubs and communities that match your interests.
-				</p>
-			</a>
-
-			{/* People Card */}
-			<a
-				href="/people"
-				class="group card hover:shadow-xl hover:border-indigo-500 transition-all duration-normal"
-			>
-				<div class="mb-4 text-3xl">🌟</div>
-				<h2 class="text-xl font-bold mb-2 group-hover:text-indigo-400 transition-colors">
-					People
-				</h2>
-				<p class="text-slate-400 text-sm">
-					Connect with students who share your interests.
-				</p>
-			</a>
-		</section>
-
-		{/* CTA Section */}
-		<section class="mt-16 text-center">
-			<a href="/feed" class="btn-primary inline-block">
-				Get Started
-			</a>
-		</section>
-	</main>
-</Layout>
