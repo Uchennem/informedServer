@@ -1,8 +1,10 @@
 ---
 import PostCard from '../components/PostCard.astro';
 import Layout from '../layouts/Layout.astro';
+import { buildServerApiUrl } from '../lib/api';
 
 type Post = {
+  id: string;
   title: string;
   author: string;
   category: string;
@@ -10,16 +12,20 @@ type Post = {
   date: string;
 };
 
-const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
+const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
+
+if (!authCookieHeader.includes('better-auth.session_token')) {
+  return Astro.redirect('/login');
+}
 
 let posts: Post[] = [];
 
 try {
-  if (!baseUrl) {
-    throw new Error('Missing PUBLIC_API_BASE_URL');
-  }
-
-  const response = await fetch(`${baseUrl}/posts`);
+  const response = await fetch(buildServerApiUrl('/api/posts', Astro.url), {
+    headers: {
+      cookie: authCookieHeader,
+    },
+  });
 
   if (response.ok) {
     const data = await response.json();

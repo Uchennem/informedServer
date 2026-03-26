@@ -1,46 +1,30 @@
-# Astro Starter Kit: Basics
+# Informed Server
 
-```sh
-npm create astro@latest -- --template basics
-```
+Astro renders the application pages and Express serves the API. BetterAuth is mounted on the Express server under `/api/auth/*`.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Runtime architecture
 
-## 🚀 Project Structure
+- Astro owns page rendering and static assets.
+- Express owns `/api/*` endpoints.
+- BetterAuth owns `/api/auth/*`.
+- Protected application APIs live under `/api/users`, `/api/groups`, and `/api/posts`.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Development
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+- `npm run dev` starts Astro and Express together.
+- Astro runs on `http://localhost:4321`.
+- Express runs on `http://localhost:3000` by default.
+- Astro proxies `/api/*` requests to Express during development.
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Environment variables
 
-## 🧞 Commands
+- `MONGODB_URI` — MongoDB connection string for BetterAuth and app data.
+- `BETTER_AUTH_SECRET` — BetterAuth signing secret.
+- `PUBLIC_API_BASE_URL` — optional explicit API origin for environments where the frontend and API are not served from the same origin.
 
-All commands are run from the root of the project, from a terminal:
+## Auth and profile flow
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+1. Browser auth requests use the BetterAuth client from [src/lib/authClient.ts](src/lib/authClient.ts).
+2. Registration creates the BetterAuth account first.
+3. Registration then saves app profile fields to `/api/users/profile`.
+4. Protected APIs resolve the session through BetterAuth middleware before responding.

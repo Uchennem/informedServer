@@ -2,9 +2,12 @@ import { Router } from "express";
 
 const router = Router();
 
-// Index route
 router.get("/", (req, res) => {
-  res.json({ title: "Home Route" });
+  res.json({
+    name: "Informed API",
+    status: "ok",
+    authBasePath: "/api/auth",
+  });
 });
 
 export default router;

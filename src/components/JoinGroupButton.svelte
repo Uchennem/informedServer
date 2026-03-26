@@ -1,6 +1,7 @@
 <script>
+  import { buildClientApiUrl } from '../lib/api';
+
   export let groupId;
-  export let baseUrl;
 
   let isSubmitting = false;
   let joined = false;
@@ -13,7 +14,7 @@
     errorMessage = '';
 
     try {
-      const response = await fetch(`${baseUrl}/api/groups/${groupId}/join`, {
+      const response = await fetch(buildClientApiUrl(`/api/groups/${groupId}/join`), {
         method: 'POST',
         credentials: 'include',
       });

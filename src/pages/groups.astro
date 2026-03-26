@@ -2,6 +2,7 @@
 import GroupCard from '../components/GroupCard.astro';
 import JoinGroupButton from '../components/JoinGroupButton.svelte';
 import Layout from '../layouts/Layout.astro';
+import { buildServerApiUrl } from '../lib/api';
 
 type Group = {
   id: string;
@@ -14,8 +15,18 @@ type Group = {
 
 let groups: Group[] = [];
 
+const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
+
+if (!authCookieHeader.includes('better-auth.session_token')) {
+  return Astro.redirect('/login');
+}
+
 try {
-  const response = await fetch(import.meta.env.PUBLIC_API_BASE_URL + '/api/groups');
+  const response = await fetch(buildServerApiUrl('/api/groups', Astro.url), {
+    headers: {
+      cookie: authCookieHeader,
+    },
+  });
 
   if (response.ok) {
     const data = await response.json();
@@ -47,7 +58,6 @@ try {
               <JoinGroupButton
                 client:load
                 groupId={groupId}
-                baseUrl={import.meta.env.PUBLIC_API_BASE_URL}
               />
             </GroupCard>
           );
