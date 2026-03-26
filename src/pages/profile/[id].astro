@@ -129,83 +129,130 @@ const interestTags = user?.interestTags ?? user?.interests ?? [];
 ---
 
 <Layout>
-  <main class="min-h-screen bg-slate-900 text-slate-200">
-    <div class="max-w-2xl mx-auto px-4 py-8">
+  <main class="min-h-screen pb-20 md:pb-8">
+    <div class="max-w-4xl mx-auto px-4 py-6 md:py-8">
       {
         isNotFound || !user ? (
-          <section class="card text-center py-12">
-            <h1 class="text-2xl font-bold mb-4">User not found</h1>
+          <section class="card text-center py-16 border-2 border-dashed border-slate-600">
+            <svg class="w-12 h-12 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <h1 class="text-2xl font-bold text-slate-100 mb-2">User not found</h1>
             <p class="text-slate-400">This profile may not exist or is unavailable right now.</p>
+            <a href="/people" class="btn-primary mt-6 inline-block">Back to people</a>
           </section>
         ) : (
           <>
-            {/* Profile Header */}
-            <section class="card mb-6 flex gap-6 items-start">
-              <img
-                src={user.avatar || '/favicon.svg'}
-                alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
-                class="avatar-lg flex-shrink-0"
-              />
+            {/* Profile Hero Section */}
+            <section class="card overflow-hidden mb-8 relative">
+              {/* Decorative signal beams */}
+              <div class="absolute inset-0 opacity-30 -z-10">
+                <div class="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-nc-accent-primary via-transparent to-transparent rounded-full blur-3xl opacity-20"></div>
+              </div>
 
-              <div class="flex-1">
-                <h1 class="text-3xl font-bold mb-2">{user.name ?? 'Unnamed User'}</h1>
-                <p class="text-slate-400 mb-4 flex gap-2 text-sm">
-                  <span class="font-medium">{user.major ?? 'Undeclared Major'}</span>
-                  <span>•</span>
-                  <span>{user.year ?? 'Year not provided'}</span>
-                </p>
+              <div class="relative z-10 p-8 md:p-12">
+                <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center mb-8">
+                  {/* Avatar */}
+                  <div class="relative flex-shrink-0">
+                    <div class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-5xl font-bold text-white overflow-hidden">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name || 'Avatar'} class="w-full h-full object-cover" />
+                      ) : (
+                        (user.name?.[0] ?? '?').toUpperCase()
+                      )}
+                    </div>
+                    <div class="absolute -bottom-2 -right-2 w-6 h-6 bg-nc-success rounded-full border-2 border-nc-bg-card"></div>
+                  </div>
 
-                {isOwnProfile ? (
-                  <button type="button" class="btn-primary text-sm">
-                    Edit Profile
-                  </button>
-                ) : null}
+                  {/* Profile Info */}
+                  <div class="flex-1">
+                    <h1 class="text-4xl md:text-5xl font-bold text-slate-100 font-display uppercase tracking-wider mb-2">
+                      {user.name ?? 'Unnamed User'}
+                    </h1>
+                    <p class="text-slate-400 text-lg mb-4 flex flex-wrap gap-2">
+                      <span class="chip text-sm bg-nc-accent-primary/20 text-nc-accent-primary">
+                        {user.major ?? 'Undeclared'}
+                      </span>
+                      {user.year && (
+                        <span class="chip text-sm bg-nc-accent-secondary/20 text-nc-accent-secondary">
+                          Class of {user.year}
+                        </span>
+                      )}
+                    </p>
+
+                    {isOwnProfile && (
+                      <button type="button" class="btn-primary">
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bio */}
+                {user.bio && (
+                  <div class="pt-6 border-t border-slate-700/50">
+                    <p class="text-slate-300 text-base leading-relaxed italic">{user.bio}</p>
+                  </div>
+                )}
               </div>
             </section>
 
-            {/* Bio Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-3">Bio</h2>
-              <p class="text-slate-300">{user.bio ?? 'No bio available.'}</p>
-            </section>
-
             {/* Interests Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-3">Interest Tags</h2>
-              {interestTags.length > 0 ? (
-                <ul class="flex flex-wrap gap-2">
+            {interestTags.length > 0 && (
+              <section class="card mb-8">
+                <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-4 flex items-center gap-3">
+                  <div class="w-1 h-8 bg-gradient-to-b from-nc-accent-primary to-nc-accent-secondary rounded-full"></div>
+                  Interests
+                </h2>
+                <div class="flex flex-wrap gap-2">
                   {interestTags.map((tag) => (
-                    <li class="badge badge-academic text-xs">{tag}</li>
+                    <span class="chip text-sm bg-nc-accent-primary/20 text-nc-accent-primary border border-nc-accent-primary/30">
+                      {tag}
+                    </span>
                   ))}
-                </ul>
-              ) : (
-                <p class="text-slate-400 text-sm">No interests shared yet.</p>
-              )}
-            </section>
+                </div>
+              </section>
+            )}
 
             {/* Recent Posts Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-4">Recent Posts</h2>
-              {recentPosts.length > 0 ? (
-                <ul class="space-y-3">
+            {recentPosts.length > 0 && (
+              <section class="card">
+                <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-4 flex items-center gap-3">
+                  <div class="w-1 h-8 bg-gradient-to-b from-nc-accent-secondary to-nc-accent-primary rounded-full"></div>
+                  Recent Posts
+                </h2>
+                <div class="space-y-3">
                   {recentPosts.map((post, index) => (
-                    <li class={`${index > 0 ? 'pt-3 border-t border-slate-600' : ''}`}>
-                      <p class="font-semibold text-slate-100 mb-1">{post.title ?? 'Untitled Post'}</p>
-                      <p class="text-slate-400 text-sm flex gap-2">
-                        <span class="badge badge-social text-xs">{post.category ?? 'General'}</span>
-                        <time datetime={post.date ?? post.createdAt ?? ''}>
+                    <div class={`${index > 0 ? 'pt-3 border-t border-slate-700/50' : ''}`}>
+                      <h3 class="font-bold text-slate-100 mb-1 uppercase tracking-wide">{post.title ?? 'Untitled Post'}</h3>
+                      <p class="text-slate-400 text-sm flex gap-2 items-center flex-wrap">
+                        <span class="chip text-xs bg-blue-500/20 text-blue-300">
+                          {post.category ?? 'General'}
+                        </span>
+                        <time datetime={post.date ?? post.createdAt ?? ''} class="text-slate-500">
                           {post.date || post.createdAt
-                            ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString()
+                            ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })
                             : 'Date unavailable'}
                         </time>
                       </p>
-                    </li>
+                    </div>
                   ))}
-                </ul>
-              ) : (
-                <p class="text-slate-400 text-sm">No recent posts found.</p>
-              )}
-            </section>
+                </div>
+              </section>
+            )}
+
+            {recentPosts.length === 0 &&  !interestTags.length && !user.bio && (
+              <section class="card text-center py-12">
+                <svg class="w-12 h-12 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4"/>
+                </svg>
+                <p class="text-slate-400">This profile is just getting started</p>
+              </section>
+            )}
           </>
         )
       }
