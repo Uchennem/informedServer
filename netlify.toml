@@ -4,3 +4,9 @@
 
 [functions]
   node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://informed-jh71.onrender.com/api/:splat"
+  status = 200
+  force = true
