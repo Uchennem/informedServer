@@ -23,12 +23,17 @@ app.set("trust proxy", 1);
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Normalize allowed origins by removing any trailing slashes
+      const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ""));
+      const incomingOrigin = origin ? origin.replace(/\/$/, "") : null;
+
+      if (!incomingOrigin || normalizedAllowed.includes(incomingOrigin)) {
         return callback(null, true);
       }
 
-      console.warn(`[CORS] Rejected origin: ${origin}. Allowed: ${allowedOrigins.join(", ")}`);
-      return callback(new Error("Not allowed by CORS"));
+      console.warn(`[CORS] Rejected: ${incomingOrigin}. Allowed: ${normalizedAllowed.join(", ")}`);
+      // Return false instead of Error to avoid breaking the response flow
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
