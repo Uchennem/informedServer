@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+import InterestTagSelector from '../components/InterestTagSelector.svelte';
+
+// Auth check
+const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
+if (!authCookieHeader.includes('better-auth.session_token')) {
+  return Astro.redirect('/login');
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="theme-color" content="#111113" />
+		<title>Choose Your Interests — Informed</title>
+		<meta name="description" content="Pick your interests and build your personalized campus feed." />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+		<link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&display=swap" rel="stylesheet" />
+	</head>
+	<body>
+		<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative">
+			<!-- Atmospheric background -->
+			<div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+				<div class="absolute top-1/4 left-1/6 h-96 w-96 rounded-full bg-gradient-to-br from-nc-accent-primary/20 to-transparent blur-3xl animate-signal-pulse"></div>
+				<div class="absolute bottom-1/4 right-1/6 h-96 w-96 rounded-full bg-gradient-to-tl from-nc-accent-secondary/15 to-transparent blur-3xl animate-signal-pulse" style="animation-delay: 2s;"></div>
+			</div>
+
+			<div class="relative z-10 w-full max-w-3xl text-center mb-10 animate-slide-up">
+				<!-- Step indicator -->
+				<div class="flex items-center justify-center gap-3 mb-8">
+					<span class="chip active text-xs">Step 1</span>
+					<span class="h-px w-8 bg-nc-border-subtle"></span>
+					<span class="chip text-xs">Step 2</span>
+				</div>
+
+				<h1 class="text-5xl md:text-6xl font-display font-bold text-nc-text-primary mb-4">
+					What are you<br/>
+					<span class="bg-gradient-to-r from-nc-accent-primary via-nc-accent-secondary to-nc-success bg-clip-text text-transparent">into right now</span>?
+				</h1>
+				<p class="text-nc-text-muted text-lg max-w-lg mx-auto mb-0">Pick the topics that interest you. This helps us surface events, groups, and people that match your vibe.</p>
+			</div>
+
+			<div class="relative z-10 w-full animate-slide-up" style="animation-delay: 0.2s;">
+				<InterestTagSelector client:load />
+			</div>
+		</div>
+	</body>
+</html>

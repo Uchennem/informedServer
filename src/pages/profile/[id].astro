@@ -24,6 +24,13 @@ type Post = {
   createdAt?: string;
 };
 
+type Group = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  category?: string;
+};
+
 const { id } = Astro.params;
 const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
@@ -31,6 +38,7 @@ const cookieHeader = request.headers.get('cookie') ?? '';
 
 let user: UserProfile | null = null;
 let recentPosts: Post[] = [];
+let userGroups: Group[] = [];
 let isOwnProfile = false;
 let isNotFound = false;
 
@@ -126,89 +134,237 @@ if (!id || !baseUrl) {
 }
 
 const interestTags = user?.interestTags ?? user?.interests ?? [];
+
+const categoryBadgeColors: Record<string, string> = {
+  'Academic': 'bg-[#60A5FA]/15 text-[#60A5FA]',
+  'Social': 'bg-pink-500/15 text-pink-400',
+  'Sports': 'bg-[#34D399]/15 text-[#34D399]',
+  'Faith': 'bg-[#6C63FF]/15 text-[#6C63FF]',
+  'Arts': 'bg-[#FBBF24]/15 text-[#FBBF24]',
+};
 ---
 
 <Layout>
-  <main class="min-h-screen bg-slate-900 text-slate-200">
-    <div class="max-w-2xl mx-auto px-4 py-8">
+  <main class="min-h-screen pb-20 md:pb-8">
+    <div class="max-w-4xl mx-auto px-4 py-6 md:py-8">
       {
         isNotFound || !user ? (
-          <section class="card text-center py-12">
-            <h1 class="text-2xl font-bold mb-4">User not found</h1>
-            <p class="text-slate-400">This profile may not exist or is unavailable right now.</p>
+          <section class="card text-center py-12 px-6">
+            <svg class="w-10 h-10 mx-auto text-nc-text-subtle mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <h1 class="text-xl font-bold text-nc-text-primary mb-1">User not found</h1>
+            <p class="text-sm text-nc-text-muted mb-4">This profile may not exist or is unavailable right now.</p>
+            <a href="/people" class="btn-secondary text-sm inline-block">Back to people</a>
           </section>
         ) : (
           <>
-            {/* Profile Header */}
-            <section class="card mb-6 flex gap-6 items-start">
-              <img
-                src={user.avatar || '/favicon.svg'}
-                alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
-                class="avatar-lg flex-shrink-0"
-              />
+            {/* Profile Hero Section */}
+            <section class="card overflow-hidden mb-8 relative">
+              {/* Decorative signal beams */}
+              <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                <div class="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-nc-accent-primary/15 via-transparent to-transparent rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-60 h-60 bg-gradient-to-tr from-nc-accent-secondary/10 via-transparent to-transparent rounded-full blur-3xl"></div>
+              </div>
 
-              <div class="flex-1">
-                <h1 class="text-3xl font-bold mb-2">{user.name ?? 'Unnamed User'}</h1>
-                <p class="text-slate-400 mb-4 flex gap-2 text-sm">
-                  <span class="font-medium">{user.major ?? 'Undeclared Major'}</span>
-                  <span>•</span>
-                  <span>{user.year ?? 'Year not provided'}</span>
-                </p>
+              <div class="relative z-10 p-8 md:p-12">
+                <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center mb-6">
+                  {/* Avatar */}
+                  <div class="relative flex-shrink-0">
+                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-4xl font-bold text-white overflow-hidden">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name || 'Avatar'} class="w-full h-full object-cover" />
+                      ) : (
+                        (user.name?.[0] ?? '?').toUpperCase()
+                      )}
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-nc-success rounded-full border-[3px] border-nc-bg-card"></div>
+                  </div>
 
-                {isOwnProfile ? (
-                  <button type="button" class="btn-primary text-sm">
-                    Edit Profile
-                  </button>
-                ) : null}
+                  {/* Profile Info */}
+                  <div class="flex-1">
+                    <h1 class="text-4xl md:text-5xl font-bold text-nc-text-primary font-display tracking-wider mb-2">
+                      {user.name ?? 'Unnamed User'}
+                    </h1>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      <span class="text-xs font-medium rounded-full px-2.5 py-0.5 bg-nc-accent-primary/12 text-nc-accent-primary">
+                        {user.major ?? 'Undeclared'}
+                      </span>
+                      {user.year && (
+                        <span class="text-xs font-medium rounded-full px-2.5 py-0.5 bg-nc-accent-secondary/12 text-nc-accent-secondary">
+                          {user.year}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Bio in hero */}
+                    {user.bio && (
+                      <p class="text-sm text-nc-text-muted mb-3 line-clamp-2">{user.bio}</p>
+                    )}
+
+                    {isOwnProfile && (
+                      <button type="button" class="btn-secondary text-xs">
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+
               </div>
             </section>
 
-            {/* Bio Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-3">Bio</h2>
-              <p class="text-slate-300">{user.bio ?? 'No bio available.'}</p>
-            </section>
+            {/* Tab Navigation */}
+            <div class="flex gap-1 mb-6 border-b border-nc-border-subtle/50 overflow-x-auto" id="profileTabs">
+              <button type="button" class="profile-tab profile-tab--active" data-tab="activity">Activity</button>
+              <button type="button" class="profile-tab" data-tab="interests">Interests</button>
+              <button type="button" class="profile-tab" data-tab="about">About</button>
+            </div>
 
-            {/* Interests Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-3">Interest Tags</h2>
-              {interestTags.length > 0 ? (
-                <ul class="flex flex-wrap gap-2">
-                  {interestTags.map((tag) => (
-                    <li class="badge badge-academic text-xs">{tag}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p class="text-slate-400 text-sm">No interests shared yet.</p>
-              )}
-            </section>
-
-            {/* Recent Posts Section */}
-            <section class="card mb-6">
-              <h2 class="text-xl font-bold mb-4">Recent Posts</h2>
+            {/* Tab Content: Activity */}
+            <div id="tab-activity" class="tab-panel">
               {recentPosts.length > 0 ? (
-                <ul class="space-y-3">
-                  {recentPosts.map((post, index) => (
-                    <li class={`${index > 0 ? 'pt-3 border-t border-slate-600' : ''}`}>
-                      <p class="font-semibold text-slate-100 mb-1">{post.title ?? 'Untitled Post'}</p>
-                      <p class="text-slate-400 text-sm flex gap-2">
-                        <span class="badge badge-social text-xs">{post.category ?? 'General'}</span>
-                        <time datetime={post.date ?? post.createdAt ?? ''}>
-                          {post.date || post.createdAt
-                            ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString()
-                            : 'Date unavailable'}
-                        </time>
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <section class="card p-6">
+                  <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
+                    Recent Posts
+                  </h2>
+                  <div class="space-y-3">
+                    {recentPosts.map((post, index) => (
+                      <div class={`${index > 0 ? 'pt-3 border-t border-nc-border-subtle/50' : ''}`}>
+                        <h3 class="font-bold text-nc-text-primary mb-1 tracking-wide text-sm">{post.title ?? 'Untitled Post'}</h3>
+                        <div class="flex gap-2 items-center flex-wrap">
+                          <span class={`chip text-xs min-h-6 px-2 ${categoryBadgeColors[post.category ?? ''] ?? categoryBadgeColors['Academic']}`}>
+                            {post.category ?? 'General'}
+                          </span>
+                          <time datetime={post.date ?? post.createdAt ?? ''} class="text-xs text-nc-text-subtle">
+                            {post.date || post.createdAt
+                              ? new Date(post.date ?? post.createdAt ?? '').toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })
+                              : 'Date unavailable'}
+                          </time>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ) : (
-                <p class="text-slate-400 text-sm">No recent posts found.</p>
+                <section class="card text-center py-10 px-6">
+                  <svg class="w-8 h-8 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4"/>
+                  </svg>
+                  <p class="text-nc-text-muted text-sm mb-2">No activity yet</p>
+                  <a href="/feed" class="text-nc-accent-primary text-sm font-semibold hover:underline">Find events to RSVP →</a>
+                </section>
               )}
-            </section>
+            </div>
+
+            {/* Tab Content: Interests */}
+            <div id="tab-interests" class="tab-panel hidden">
+              {interestTags.length > 0 ? (
+                <section class="card p-6">
+                  <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
+                    Interests
+                  </h2>
+                  <div class="flex flex-wrap gap-2">
+                    {interestTags.map((tag) => (
+                      <span class="chip text-sm bg-nc-accent-primary/20 text-nc-accent-primary border border-nc-accent-primary/30">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <section class="card text-center py-12 px-6">
+                  <p class="text-nc-text-muted text-sm mb-0">No interests added yet</p>
+                </section>
+              )}
+            </div>
+
+            {/* Tab Content: About */}
+            <div id="tab-about" class="tab-panel hidden">
+              <section class="card p-6">
+                <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
+                  About
+                </h2>
+                <div class="space-y-4">
+                  <div class="flex items-center gap-3">
+                    <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Name</span>
+                    <span class="text-nc-text-primary text-sm font-medium">{user.name ?? '—'}</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Major</span>
+                    <span class="text-nc-text-primary text-sm font-medium">{user.major ?? 'Undeclared'}</span>
+                  </div>
+                  {user.year && (
+                    <div class="flex items-center gap-3">
+                      <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Year</span>
+                      <span class="text-nc-text-primary text-sm font-medium">Class of {user.year}</span>
+                    </div>
+                  )}
+                  {user.bio && (
+                    <div class="pt-3 border-t border-nc-border-subtle/50">
+                      <span class="text-nc-text-subtle text-sm block mb-1">Bio</span>
+                      <p class="text-nc-text-muted text-sm leading-relaxed mb-0">{user.bio}</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
           </>
         )
       }
     </div>
   </main>
 </Layout>
+
+<style>
+  .profile-tab {
+    padding: 0.75rem 1.25rem;
+    font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--nc-text-subtle);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .profile-tab:hover {
+    color: var(--nc-text-primary);
+  }
+
+  .profile-tab--active {
+    color: var(--nc-accent-primary);
+    border-bottom-color: var(--nc-accent-primary);
+  }
+</style>
+
+<script>
+  const tabs = document.querySelectorAll('[data-tab]');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = (tab as HTMLElement).dataset.tab;
+
+      tabs.forEach(t => t.classList.remove('profile-tab--active'));
+      tab.classList.add('profile-tab--active');
+
+      panels.forEach(p => {
+        if (p.id === `tab-${target}`) {
+          p.classList.remove('hidden');
+        } else {
+          p.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>

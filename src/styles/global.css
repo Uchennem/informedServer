@@ -2,50 +2,360 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
-html,
-body {
-  @apply bg-slate-900 text-slate-200;
-  font-family: Inter, system-ui, sans-serif;
+/* ===== CSS Variables - Informed Theme ===== */
+:root {
+  /* Background colors — warm neutral, no blue tint */
+  --nc-bg-root: #111113;
+  --nc-bg-elevated: #1A1A1D;
+  --nc-bg-card: #232326;
+  --nc-border-subtle: #2E2E32;
+
+  /* Accent — single dominant color */
+  --nc-accent-primary: #6C63FF;
+  --nc-accent-secondary: #9890FF;
+  --nc-success: #34D399;
+  --nc-destructive: #EF4444;
+
+  /* Text — true gray, no blue tint */
+  --nc-text-primary: #EDEDEC;
+  --nc-text-muted: #A0A0A0;
+  --nc-text-subtle: #666666;
+
+  /* Semantic colors */
+  --nc-info: #60A5FA;
+  --nc-warning: #FBBF24;
 }
 
-/* Scrollbar styling for dark mode */
+/* ===== Base Styles ===== */
+html,
+body,
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--nc-bg-root);
+  color: var(--nc-text-primary);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+  /* Clean dark background — no animated gradient, no colored beams */
+  background-color: var(--nc-bg-root);
+  background-image: none;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  z-index: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 0.5px, transparent 0.5px);
+  background-size: 4px 4px;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Typography ===== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.25rem + 1.8vw, 2.8rem);
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--nc-text-primary);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.15rem);
+  letter-spacing: 0.02em;
+  color: var(--nc-text-primary);
+}
+
+h3 {
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.65rem);
+  color: var(--nc-text-primary);
+}
+
+p {
+  margin-bottom: 1rem;
+  color: var(--nc-text-muted);
+}
+
+a {
+  color: var(--nc-accent-primary);
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+a:hover {
+  color: var(--nc-accent-secondary);
+  text-decoration: underline;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--nc-accent-primary);
+  color: white;
+}
+
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  @apply w-2 h-2;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-800;
+  background: var(--nc-bg-elevated);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-600 rounded-full hover:bg-slate-400;
+  background: var(--nc-border-subtle);
+  border-radius: 6px;
+  transition: all 200ms ease;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nc-text-subtle);
 }
 
-/* Selection color */
-::selection {
-  @apply bg-indigo-500 text-white;
-}
-
-/* Form inputs */
+/* ===== Form Elements ===== */
 input,
 textarea,
 select {
-  @apply bg-slate-800 border border-slate-600 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 transition-all;
+  background-color: var(--nc-bg-elevated);
+  border: 1px solid var(--nc-border-subtle);
+  color: var(--nc-text-primary);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: all 200ms ease;
+  width: 100%;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--nc-accent-primary);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.08);
+  background-color: rgba(108, 99, 255, 0.02);
 }
 
 input::placeholder,
 textarea::placeholder {
-  @apply text-slate-400;
+  color: var(--nc-text-subtle);
 }
 
-/* Focus visible for accessibility */
-a:focus-visible,
-button:focus-visible {
-  @apply outline-2 outline-offset-2 outline-indigo-500;
+/* Pill-ish inputs for modern feel */
+input[type='email'],
+input[type='password'],
+input[type='text'] {
+  border-radius: 2rem;
+  padding: 0.875rem 1.25rem;
+}
+
+/* Dark select with pill shape */
+select {
+  border-radius: 2rem;
+  padding: 0.875rem 1.25rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%236B7288' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select option {
+  background-color: var(--nc-bg-elevated);
+  color: var(--nc-text-primary);
+  padding: 0.5rem;
+}
+
+/* ===== Interactive Elements ===== */
+button,
+a.btn,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Clash Grotesk', 'Work Sans', 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+}
+
+button:focus-visible,
+a.btn:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--nc-accent-primary);
+  outline-offset: 2px;
+}
+
+/* ===== Section Header Utility ===== */
+.section-header {
+  margin-bottom: 2rem;
+}
+
+.section-header .section-eyebrow {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--nc-text-subtle);
+  margin-bottom: 0.5rem;
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.section-header h1 {
+  font-size: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--nc-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.section-header .section-subtitle {
+  font-size: 1rem;
+  color: var(--nc-text-muted);
+  margin: 0;
+}
+
+/* ===== Section Divider ===== */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-divider::before {
+  content: '';
+  width: 3px;
+  height: 2rem;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--nc-accent-primary), var(--nc-accent-secondary));
+  flex-shrink: 0;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes signalPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes kineticPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Staggered list animations */
+.stagger-container > * {
+  animation: slideUp 0.5s ease-out backwards;
+}
+
+.stagger-container > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-container > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-container > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-container > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-container > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-container > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-container > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-container > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-container > *:nth-child(n + 9) {
+  animation-delay: 480ms;
+}
+
+/* ===== Accessibility ===== */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  :root {
+    --nc-accent-primary: #8B83FF;
+    --nc-accent-secondary: #B0AAFF;
+  }
 }
