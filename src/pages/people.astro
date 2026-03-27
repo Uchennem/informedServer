@@ -14,7 +14,11 @@ type MatchUser = {
 
 const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
-const filterChips = ['Major', 'Interest', 'Year'];
+const authCookieHeader = request.headers.get('cookie') ?? '';
+
+if (!authCookieHeader.includes('better-auth.session_token')) {
+  return Astro.redirect('/login');
+}
 
 let matches: MatchUser[] = [];
 
@@ -25,7 +29,7 @@ try {
 
   const response = await fetch(`${baseUrl}/api/users/matches`, {
     headers: {
-      cookie: request.headers.get('cookie') ?? '',
+      cookie: authCookieHeader,
     },
   });
 
@@ -42,25 +46,24 @@ try {
   <main class="min-h-screen pb-20 md:pb-8">
     <div class="mx-auto max-w-7xl px-4 py-6 md:py-8">
       {/* Header */}
-      <div class="mb-8">
-        <h1 class="text-5xl font-bold text-slate-100 font-display uppercase tracking-wider mb-2">Find Your People</h1>
-        <p class="text-slate-400 text-lg">Discover fellow students and connect with your community</p>
+      <div class="section-header mb-6">
+        <span class="section-eyebrow">Campus connections</span>
+        <h1>Find Your People</h1>
+        <p class="section-subtitle">Discover fellow students and build your community.</p>
       </div>
 
-      {/* Filter Chips */}
-      <div class="mb-8 sticky top-0 bg-gradient-to-b from-nc-bg-root via-nc-bg-root to-nc-bg-root/50 backdrop-blur z-10 pb-4">
-        <div class="overflow-x-auto scrollbar-thin">
-          <div class="flex gap-2 min-w-max">
-            {filterChips.map((chip) => (
-              <button
-                type="button"
-                class="chip text-xs font-semibold uppercase tracking-wide transition-all duration-200 flex-shrink-0 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500 hover:text-nc-accent-primary"
-                data-filter={chip}
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
+      {/* Search Bar */}
+      <div class="mb-8 max-w-lg">
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nc-text-subtle pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            type="search"
+            placeholder="Search by name or major..."
+            class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl"
+            id="peopleSearch"
+          />
         </div>
       </div>
 
@@ -70,50 +73,50 @@ try {
           {matches.map((match) => {
             const userId = match.id ?? match._id ?? '';
             const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
+            const sharedInterestsCount = interestTags.length;
 
             return (
-              <article class="card group stagger-item relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-nc-accent-primary/30 hover:-translate-y-1">
-                {/* Decorative accent bar */}
-                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-nc-accent-primary via-nc-accent-secondary to-transparent"></div>
+              <article class="card group stagger-item relative overflow-hidden transition-all duration-300 hover:-translate-y-1 p-5">
+                {/* Accent bar */}
+                <div class="absolute top-0 left-0 right-0 h-[3px] bg-nc-accent-primary"></div>
 
-                <div class="mb-3">
-                  <div class="flex items-start justify-between gap-3 mb-3">
-                    <div class="flex items-center gap-3">
-                      {/* Avatar Placeholder */}
-                      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                        {(match.name?.[0] ?? '?').toUpperCase()}
-                      </div>
-                      <div>
-                        <p class="font-bold text-slate-100 uppercase tracking-wide text-sm">{match.name}</p>
-                        <p class="text-xs text-slate-400">
-                          {match.major ?? 'Undeclared'}
-                          {match.year ? ` • ${match.year}` : ''}
-                        </p>
-                      </div>
-                    </div>
+                <div class="flex items-start gap-3 mb-3">
+                  <div class="w-11 h-11 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                    {(match.name?.[0] ?? '?').toUpperCase()}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-bold text-nc-text-primary tracking-wide text-sm mb-0">{match.name}</p>
+                    <p class="text-xs text-nc-text-muted mb-0">
+                      {match.major ?? 'Undeclared'}
+                      {match.year ? ` · ${match.year}` : ''}
+                    </p>
                   </div>
                 </div>
 
-                {/* Interests */}
+                {sharedInterestsCount > 0 && (
+                  <p class="text-xs text-nc-accent-primary font-medium mb-3">{sharedInterestsCount} shared interests</p>
+                )}
+
+                {/* Interest tags */}
                 {interestTags.length > 0 ? (
-                  <div class="flex flex-wrap gap-2 mb-4">
+                  <div class="flex flex-wrap gap-1.5 mb-4">
                     {interestTags.slice(0, 3).map((tag) => (
-                      <span class="chip text-xs bg-nc-accent-primary/15 text-nc-accent-primary border border-nc-accent-primary/30">
+                      <span class="text-[10px] font-medium rounded-full px-2 py-0.5 bg-nc-accent-primary/10 text-nc-accent-primary">
                         {tag}
                       </span>
                     ))}
                     {interestTags.length > 3 && (
-                      <span class="chip text-xs text-slate-400">
+                      <span class="text-[10px] text-nc-text-subtle">
                         +{interestTags.length - 3}
                       </span>
                     )}
                   </div>
                 ) : (
-                  <p class="text-xs text-slate-400 mb-4 italic">No shared interests yet</p>
+                  <p class="text-xs text-nc-text-subtle mb-4 italic">No shared interests yet</p>
                 )}
 
                 {/* Connect Button */}
-                <div class="pt-3 border-t border-slate-700/50">
+                <div class="pt-3 border-t border-nc-border-subtle/50">
                   <ConnectButton client:load userId={userId} mode="connect" />
                 </div>
               </article>
@@ -121,20 +124,14 @@ try {
           })}
         </section>
       ) : (
-        <section class="card py-16 text-center border-2 border-dashed border-slate-600">
-          <svg class="w-12 h-12 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        <section class="max-w-md mx-auto text-center py-12">
+          <svg class="w-10 h-10 mx-auto text-nc-text-subtle mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
           </svg>
-          <p class="font-semibold text-slate-200 text-lg">No people suggestions yet</p>
-          <p class="mt-2 text-sm text-slate-400">Join groups and add interests to get better matches</p>
-          <div class="mt-6">
-            <a href="/groups" class="btn-primary">Explore Groups</a>
-          </div>
+          <p class="font-semibold text-nc-text-primary mb-1">No matches yet</p>
+          <p class="text-sm text-nc-text-muted mb-4">Try joining a group first — we'll find people with similar interests.</p>
+          <a href="/groups" class="btn-secondary text-sm">Explore Groups</a>
         </section>
-      )}
-    </div>
-  </main>
-</Layout>
       )}
     </div>
   </main>

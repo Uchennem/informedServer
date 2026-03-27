@@ -1,0 +1,66 @@
+---
+type Props = {
+  variant?: 'event' | 'group' | 'person';
+};
+
+const { variant = 'event' } = Astro.props;
+
+const shimmerColors: Record<string, string> = {
+  event: 'from-nc-accent-primary/8 via-nc-accent-primary/15 to-nc-accent-primary/8',
+  group: 'from-nc-accent-secondary/8 via-nc-accent-secondary/15 to-nc-accent-secondary/8',
+  person: 'from-nc-success/8 via-nc-success/15 to-nc-success/8',
+};
+
+const shimmer = shimmerColors[variant] ?? shimmerColors.event;
+---
+
+<div class="card p-6 stagger-item overflow-hidden">
+  {/* Shimmer overlay */}
+  <div class={`absolute inset-0 bg-gradient-to-r ${shimmer} animate-shimmer pointer-events-none`}></div>
+  
+  {/* Color bar skeleton */}
+  <div class="absolute top-0 left-0 right-0 h-1 bg-nc-border-subtle/40"></div>
+
+  {/* Title skeleton */}
+  <div class="mb-3">
+    <div class="h-5 w-3/4 rounded bg-nc-border-subtle/50"></div>
+  </div>
+
+  {/* Description skeleton */}
+  <div class="space-y-2 mb-4">
+    <div class="h-3 w-full rounded bg-nc-border-subtle/30"></div>
+    <div class="h-3 w-2/3 rounded bg-nc-border-subtle/30"></div>
+  </div>
+
+  {/* Author + category row */}
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-2">
+      <div class="h-2 w-2 rounded-full bg-nc-accent-secondary/30"></div>
+      <div class="h-3 w-20 rounded bg-nc-border-subtle/40"></div>
+    </div>
+    <div class="h-6 w-16 rounded-full bg-nc-border-subtle/40"></div>
+  </div>
+
+  {/* Date + location skeleton */}
+  <div class="flex items-center gap-4 mb-4">
+    <div class="h-3 w-28 rounded bg-nc-border-subtle/25"></div>
+    <div class="h-3 w-24 rounded bg-nc-border-subtle/25"></div>
+  </div>
+
+  {/* Footer skeleton */}
+  <div class="flex items-center justify-between pt-4 border-t border-nc-border-subtle/30">
+    <div class="h-4 w-12 rounded bg-nc-border-subtle/30"></div>
+    <div class="h-9 w-20 rounded-full bg-nc-border-subtle/40"></div>
+  </div>
+</div>
+
+<style>
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+</style>

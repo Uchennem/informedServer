@@ -7,10 +7,12 @@ import { buildServerApiUrl } from '../lib/api';
 type Post = {
   id: string;
   title: string;
+  description?: string;
   author: string;
   category: string;
   rsvpCount: number;
   date: string;
+  location?: string;
 };
 
 type MatchUser = {
@@ -24,6 +26,7 @@ type MatchUser = {
 
 const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
+const plannerPills = ['Tonight', 'This Week', 'Weekend'];
 const feedFilters = ['All', 'Social', 'Academic', 'Sports', 'Faith', 'Arts'];
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
 
@@ -71,107 +74,206 @@ try {
 
 <Layout>
   <main class="min-h-screen pb-20 md:pb-8">
-    <div class="max-w-7xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Feed Section */}
-      <section class="lg:col-span-2">
-        {/* Header */}
-        <div class="mb-8">
-          <h1 class="text-5xl font-bold text-slate-100 font-display uppercase tracking-wider mb-2">Discover Events</h1>
-          <p class="text-slate-400 text-lg">Find and RSVP to campus events that match your interests</p>
+    <div class="max-w-3xl mx-auto px-4 py-6 md:py-8">
+      {/* Header */}
+      <div class="section-header mb-8">
+        <span class="section-eyebrow">Tonight on campus</span>
+        <h1>Discover Events</h1>
+        <p class="section-subtitle">Find and RSVP to campus events that match your interests.</p>
+      </div>
+
+      {/* Temporal Planner Strip + Category Filters */}
+      <div class="mb-8 sticky top-0 bg-gradient-to-b from-nc-bg-root via-nc-bg-root to-nc-bg-root/0 backdrop-blur-sm z-10 pb-4 pt-1 space-y-3">
+        {/* Planner strip — Nextdoor pillar pattern */}
+        <div class="flex gap-2" id="plannerStrip">
+          {plannerPills.map((pill, i) => (
+            <button
+              type="button"
+              class={`chip text-xs font-bold uppercase tracking-wider transition-all duration-200 flex-shrink-0 min-h-9 px-5 ${
+                i === 0 ? 'active' : ''
+              }`}
+              data-planner={pill}
+            >
+              {pill}
+            </button>
+          ))}
         </div>
 
-        {/* Category Filter Chips */}
-        <div class="mb-8 sticky top-0 bg-gradient-to-b from-nc-bg-root via-nc-bg-root to-nc-bg-root/50 backdrop-blur z-10 pb-4">
-          <div class="overflow-x-auto scrollbar-thin">
-            <div class="flex gap-2 min-w-max">
-              {feedFilters.map((filter) => (
-                <button
-                  type="button"
-                  class={`chip text-xs font-semibold uppercase tracking-wide transition-all duration-200 flex-shrink-0 ${
-                    filter === 'All'
-                      ? 'bg-nc-accent-primary text-white shadow-lg shadow-nc-accent-primary/40 scale-105'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500'
-                  }`}
-                  data-filter={filter}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
+        {/* Category filters */}
+        <div class="overflow-x-auto scrollbar-thin">
+          <div class="flex gap-2 min-w-max" id="feedFilterBar">
+            {feedFilters.map((filter) => (
+              <button
+                type="button"
+                class={`text-xs font-semibold uppercase tracking-wide transition-all duration-200 flex-shrink-0 rounded-full px-3 py-1.5 border ${
+                  filter === 'All'
+                    ? 'bg-nc-accent-primary/15 text-nc-accent-primary border-nc-accent-primary/40'
+                    : 'text-nc-text-subtle border-nc-border-subtle hover:text-nc-text-primary hover:border-nc-text-subtle'
+                }`}
+                data-filter={filter}
+              >
+                {filter}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Posts List */}
-        <div class="space-y-4 stagger-container">
-          {
-            posts.length > 0 ? (
-              posts.map((post) => <PostCard post={post} />)
-            ) : (
-              <div class="card text-center py-16 border-2 border-dashed border-slate-600">
-                <svg class="w-12 h-12 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <p class="text-slate-300 font-semibold text-lg">No events yet</p>
-                <p class="mt-2 text-sm text-slate-400">Join groups or update your interests to find events matching your vibe</p>
-                <div class="mt-6 flex justify-center gap-3">
-                  <a href="/groups" class="btn-primary text-sm">Join Groups</a>
-                  <a href="/people" class="btn-secondary text-sm">Find People</a>
-                </div>
-              </div>
-            )
-          }
-        </div>
-      </section>
+      {/* Posts List — with inline people card after 3rd post */}
+      <div class="space-y-4 stagger-container">
+        {
+          posts.length > 0 ? (
+            posts.map((post, index) => (
+              <>
+                <PostCard post={post} />
 
-      {/* People Discovery Sidebar */}
-      <aside class="lg:col-span-1" aria-label="Students You Might Know">
-        <div class="sticky top-24">
-          <h2 class="text-2xl font-bold text-slate-100 font-display uppercase tracking-wide mb-4">Connect</h2>
-          
-          <div class="card max-h-[calc(100vh-8rem)] overflow-y-auto">
-            {
-              matches.length > 0 ? (
-                matches.map((match, index) => {
-                  const userId = match.id ?? match._id ?? '';
-                  const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
+                {/* Inline "Students You Might Know" — after 3rd post */}
+                {index === 2 && matches.length > 0 && (
+                  <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCard">
+                    <button
+                      type="button"
+                      id="dismissPeopleCard"
+                      class="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-nc-text-subtle hover:text-nc-text-primary hover:bg-nc-bg-elevated transition-all"
+                      aria-label="Dismiss"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
 
-                  return (
-                    <div class={`flex flex-col gap-3 pb-4 transition-all duration-200 hover:bg-slate-700/30 p-3 rounded-lg ${index > 0 ? 'pt-4 border-t border-slate-600' : ''}`}>
-                      <div>
-                        <p class="font-bold text-slate-100 text-sm uppercase tracking-wide">{match.name}</p>
-                        <p class="text-xs text-slate-400">{match.major ?? 'Undeclared'}</p>
-                      </div>
+                    <h3 class="text-sm font-bold text-nc-text-primary font-display uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <svg class="w-4 h-4 text-nc-accent-secondary" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
+                      Students You Might Know
+                    </h3>
 
-                      {interestTags.length > 0 ? (
-                        <div class="flex flex-wrap gap-1">
-                          {interestTags.slice(0, 2).map((tag) => (
-                            <span class="chip text-xs bg-nc-accent-primary/20 text-nc-accent-primary">{tag}</span>
-                          ))}
-                          {interestTags.length > 2 && (
-                            <span class="chip text-xs text-slate-400">+{interestTags.length - 2}</span>
-                          )}
-                        </div>
-                      ) : null}
+                    <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+                      {matches.map((match) => {
+                        const userId = match.id ?? match._id ?? '';
+                        const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
 
-                      <div class="mt-1">
-                        <ConnectButton client:load userId={userId} />
-                      </div>
+                        return (
+                          <div class="flex flex-col items-center gap-2 min-w-[100px] flex-shrink-0 text-center">
+                            <div class="h-12 w-12 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-sm font-bold text-white">
+                              {(match.name?.[0] ?? '?').toUpperCase()}
+                            </div>
+                            <p class="font-semibold text-nc-text-primary text-xs tracking-wide mb-0 line-clamp-1">{match.name}</p>
+                            <p class="text-[10px] text-nc-text-muted mb-0 line-clamp-1">{match.major ?? 'Undeclared'}</p>
+                            {interestTags.length > 0 && (
+                              <span class="text-[10px] text-nc-accent-secondary">{interestTags.length} shared</span>
+                            )}
+                            <ConnectButton client:load userId={userId} />
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })
-              ) : (
-                <div class="text-center py-8">
-                  <svg class="w-8 h-8 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                  </svg>
-                  <p class="text-xs text-slate-400">No suggestions right now</p>
-                  <p class="text-xs text-slate-500 mt-1">Update your profile to get better matches</p>
-                </div>
-              )
-            }
+
+                    <a href="/people" class="block text-center text-xs text-nc-accent-primary font-semibold mt-3 hover:text-nc-accent-secondary transition-colors">See all people →</a>
+                  </div>
+                )}
+              </>
+            ))
+          ) : (
+            <div class="card text-center py-12 px-6">
+              <svg class="w-12 h-12 mx-auto text-nc-text-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <p class="text-nc-text-primary font-semibold text-lg mb-1">No events yet</p>
+              <p class="mt-2 text-sm text-nc-text-muted mb-0">Join groups or update your interests to find events matching your vibe</p>
+              <div class="mt-6 flex justify-center gap-3">
+                <a href="/groups" class="btn-primary text-sm">Join Groups</a>
+                <a href="/people" class="btn-secondary text-sm">Find People</a>
+              </div>
+            </div>
+          )
+        }
+
+        {/* Show people card at end if fewer than 3 posts */}
+        {posts.length > 0 && posts.length < 3 && matches.length > 0 && (
+          <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCardAlt">
+            <button
+              type="button"
+              class="dismiss-people-btn absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-nc-text-subtle hover:text-nc-text-primary hover:bg-nc-bg-elevated transition-all"
+              aria-label="Dismiss"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <h3 class="text-sm font-bold text-nc-text-primary font-display uppercase tracking-wider mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-nc-accent-secondary" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
+              Students You Might Know
+            </h3>
+
+            <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+              {matches.map((match) => {
+                const userId = match.id ?? match._id ?? '';
+                const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];
+
+                return (
+                  <div class="flex flex-col items-center gap-2 min-w-[100px] flex-shrink-0 text-center">
+                    <div class="h-12 w-12 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-sm font-bold text-white">
+                      {(match.name?.[0] ?? '?').toUpperCase()}
+                    </div>
+                    <p class="font-semibold text-nc-text-primary text-xs tracking-wide mb-0 line-clamp-1">{match.name}</p>
+                    <p class="text-[10px] text-nc-text-muted mb-0 line-clamp-1">{match.major ?? 'Undeclared'}</p>
+                    {interestTags.length > 0 && (
+                      <span class="text-[10px] text-nc-accent-secondary">{interestTags.length} shared</span>
+                    )}
+                    <ConnectButton client:load userId={userId} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <a href="/people" class="block text-center text-xs text-nc-accent-primary font-semibold mt-3 hover:text-nc-accent-secondary transition-colors">See all people →</a>
           </div>
-        </div>
-      </aside>
+        )}
+      </div>
     </div>
   </main>
 </Layout>
+
+<script>
+  // Planner strip interactivity
+  const planner = document.getElementById('plannerStrip');
+  if (planner) {
+    planner.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('button');
+      if (!btn) return;
+      planner.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  }
+
+  // Category filter bar interactivity
+  const bar = document.getElementById('feedFilterBar');
+  if (bar) {
+    bar.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('button');
+      if (!btn) return;
+      bar.querySelectorAll('button').forEach(b => {
+        b.classList.remove('bg-nc-accent-primary/15', 'text-nc-accent-primary', 'border-nc-accent-primary/40');
+        b.classList.add('text-nc-text-subtle', 'border-nc-border-subtle');
+      });
+      btn.classList.remove('text-nc-text-subtle', 'border-nc-border-subtle');
+      btn.classList.add('bg-nc-accent-primary/15', 'text-nc-accent-primary', 'border-nc-accent-primary/40');
+    });
+  }
+
+  // Dismiss people suggestion cards
+  document.querySelectorAll('#dismissPeopleCard, .dismiss-people-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.card');
+      if (card) {
+        card.style.transition = 'opacity 0.3s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease';
+        card.style.opacity = '0';
+        card.style.maxHeight = card.scrollHeight + 'px';
+        requestAnimationFrame(() => {
+          (card as HTMLElement).style.maxHeight = '0';
+          (card as HTMLElement).style.marginTop = '0';
+          (card as HTMLElement).style.marginBottom = '0';
+          (card as HTMLElement).style.padding = '0';
+          (card as HTMLElement).style.overflow = 'hidden';
+        });
+        setTimeout(() => card.remove(), 500);
+      }
+    });
+  });
+</script>

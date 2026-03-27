@@ -1,32 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===== CSS Variables - Night Campus Signal Theme ===== */
+/* ===== CSS Variables - Informed Theme ===== */
 :root {
-  /* Background colors */
-  --nc-bg-root: #050712;
-  --nc-bg-elevated: #101426;
-  --nc-bg-card: #15182A;
-  --nc-border-subtle: #262B3F;
+  /* Background colors — warm neutral, no blue tint */
+  --nc-bg-root: #111113;
+  --nc-bg-elevated: #1A1A1D;
+  --nc-bg-card: #232326;
+  --nc-border-subtle: #2E2E32;
 
-  /* Accent colors */
-  --nc-accent-primary: #7C5CFF;
-  --nc-accent-secondary: #F4B45A;
-  --nc-success: #33D9A0;
-  --nc-destructive: #FF4B70;
+  /* Accent — single dominant color */
+  --nc-accent-primary: #6C63FF;
+  --nc-accent-secondary: #9890FF;
+  --nc-success: #34D399;
+  --nc-destructive: #EF4444;
 
-  /* Text colors */
-  --nc-text-primary: #F9FAFF;
-  --nc-text-muted: #9CA3C9;
-  --nc-text-subtle: #6B7288;
+  /* Text — true gray, no blue tint */
+  --nc-text-primary: #EDEDEC;
+  --nc-text-muted: #A0A0A0;
+  --nc-text-subtle: #666666;
 
   /* Semantic colors */
-  --nc-info: #5B9EFF;
-  --nc-warning: #FFB84D;
+  --nc-info: #60A5FA;
+  --nc-warning: #FBBF24;
 }
 
 /* ===== Base Styles ===== */
@@ -46,14 +43,26 @@ body {
   font-weight: 400;
   line-height: 1.5;
   scroll-behavior: smooth;
-  /* Animated background with signal beams */
-  background-image: 
-    radial-gradient(circle at 20% 50%, rgba(124, 92, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(244, 180, 90, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(51, 217, 160, 0.06) 0%, transparent 50%);
-  background-size: 200% 200%;
-  animation: gradientShift 40s ease-in-out infinite;
-  background-attachment: fixed;
+  /* Clean dark background — no animated gradient, no colored beams */
+  background-color: var(--nc-bg-root);
+  background-image: none;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  z-index: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 0.5px, transparent 0.5px);
+  background-size: 4px 4px;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== Typography ===== */
@@ -63,28 +72,28 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 0.5rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 h1 {
-  font-size: 2.5rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: clamp(2rem, 1.25rem + 1.8vw, 2.8rem);
+  letter-spacing: 0.03em;
+  text-transform: none;
   color: var(--nc-text-primary);
 }
 
 h2 {
-  font-size: 2rem;
-  letter-spacing: 0.03em;
+  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.15rem);
+  letter-spacing: 0.02em;
   color: var(--nc-text-primary);
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.65rem);
   color: var(--nc-text-primary);
 }
 
@@ -112,8 +121,8 @@ a:hover {
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -121,14 +130,13 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--nc-accent-primary), var(--nc-accent-secondary));
-  border-radius: 5px;
+  background: var(--nc-border-subtle);
+  border-radius: 6px;
   transition: all 200ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--nc-accent-primary);
-  box-shadow: 0 0 10px rgba(124, 92, 255, 0.4);
+  background: var(--nc-text-subtle);
 }
 
 /* ===== Form Elements ===== */
@@ -144,6 +152,7 @@ select {
   font-size: 1rem;
   line-height: 1.5;
   transition: all 200ms ease;
+  width: 100%;
 }
 
 input:focus,
@@ -151,8 +160,8 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--nc-accent-primary);
-  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.1), inset 0 0 0 1px var(--nc-accent-primary);
-  background-color: rgba(124, 92, 255, 0.02);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.08);
+  background-color: rgba(108, 99, 255, 0.02);
 }
 
 input::placeholder,
@@ -160,12 +169,30 @@ textarea::placeholder {
   color: var(--nc-text-subtle);
 }
 
-/* Input pills for modern feel */
+/* Pill-ish inputs for modern feel */
 input[type='email'],
 input[type='password'],
 input[type='text'] {
   border-radius: 2rem;
   padding: 0.875rem 1.25rem;
+}
+
+/* Dark select with pill shape */
+select {
+  border-radius: 2rem;
+  padding: 0.875rem 1.25rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%236B7288' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select option {
+  background-color: var(--nc-bg-elevated);
+  color: var(--nc-text-primary);
+  padding: 0.5rem;
 }
 
 /* ===== Interactive Elements ===== */
@@ -175,10 +202,10 @@ a.btn,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
+  font-family: 'Clash Grotesk', 'Work Sans', 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 200ms ease;
   border: none;
@@ -191,6 +218,54 @@ a.btn:focus-visible,
 .btn:focus-visible {
   outline: 2px solid var(--nc-accent-primary);
   outline-offset: 2px;
+}
+
+/* ===== Section Header Utility ===== */
+.section-header {
+  margin-bottom: 2rem;
+}
+
+.section-header .section-eyebrow {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--nc-text-subtle);
+  margin-bottom: 0.5rem;
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.section-header h1 {
+  font-size: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+  font-family: 'Clash Grotesk', 'Work Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--nc-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.section-header .section-subtitle {
+  font-size: 1rem;
+  color: var(--nc-text-muted);
+  margin: 0;
+}
+
+/* ===== Section Divider ===== */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-divider::before {
+  content: '';
+  width: 3px;
+  height: 2rem;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--nc-accent-primary), var(--nc-accent-secondary));
+  flex-shrink: 0;
 }
 
 /* ===== Animations ===== */
@@ -206,7 +281,7 @@ a.btn:focus-visible,
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -253,23 +328,16 @@ a.btn:focus-visible,
   animation: slideUp 0.5s ease-out backwards;
 }
 
-.stagger-container > *:nth-child(1) {
-  animation-delay: 0ms;
-}
-.stagger-container > *:nth-child(2) {
-  animation-delay: 50ms;
-}
-.stagger-container > *:nth-child(3) {
-  animation-delay: 100ms;
-}
-.stagger-container > *:nth-child(4) {
-  animation-delay: 150ms;
-}
-.stagger-container > *:nth-child(5) {
-  animation-delay: 200ms;
-}
-.stagger-container > *:nth-child(n + 6) {
-  animation-delay: calc(50ms * (var(--index, 6) - 5));
+.stagger-container > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-container > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-container > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-container > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-container > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-container > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-container > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-container > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-container > *:nth-child(n + 9) {
+  animation-delay: 480ms;
 }
 
 /* ===== Accessibility ===== */
@@ -287,7 +355,7 @@ a.btn:focus-visible,
 /* High contrast mode support */
 @media (prefers-contrast: more) {
   :root {
-    --nc-accent-primary: #9d78ff;
-    --nc-accent-secondary: #ffd966;
+    --nc-accent-primary: #8B83FF;
+    --nc-accent-secondary: #B0AAFF;
   }
 }

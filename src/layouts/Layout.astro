@@ -4,10 +4,11 @@ import '../styles/global.css';
 const pathname = Astro.url.pathname;
 
 const navItems = [
-	{ href: '/feed', label: 'Feed', icon: '📰' },
-	{ href: '/groups', label: 'Groups', icon: '👥' },
-	{ href: '/people', label: 'People', icon: '🌟' },
-	{ href: '/profile/me', label: 'Profile', icon: '🙍' },
+	{ href: '/feed', label: 'Feed', icon: 'feed' },
+	{ href: '/groups', label: 'Groups', icon: 'groups' },
+	{ href: '/people', label: 'People', icon: 'people' },
+	{ href: '/saved', label: 'Saved', icon: 'saved' },
+	{ href: '/profile/me', label: 'Profile', icon: 'profile' },
 ];
 
 const isActive = (href: string): boolean => {
@@ -22,62 +23,131 @@ const isActive = (href: string): boolean => {
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Informed</title>
+
+		<!-- SEO -->
+		<title>Informed — Find Your People & Events on Campus</title>
+		<meta name="description" content="Informed brings student events, clubs, and connections into one modern place. Discover what's happening on campus tonight." />
+		<meta property="og:title" content="Informed — Your Campus, Connected" />
+		<meta property="og:description" content="Discover events, join groups, and connect with students who share your interests." />
+		<meta name="theme-color" content="#111113" />
+
+		<!-- Font preloads -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+		<link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&display=swap" rel="stylesheet" />
 	</head>
 	<body>
-		<div class="min-h-screen bg-slate-900 text-slate-200">
-			<aside class="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:border-r md:border-slate-700 md:bg-slate-800/80 md:backdrop-blur">
-				<div class="px-5 py-6">
-					<a href="/" class="text-2xl font-extrabold tracking-tight text-indigo-400">Informed</a>
-					<p class="mt-1 text-sm text-slate-400">Built for students</p>
+		<div class="min-h-screen text-nc-text-primary">
+			<!-- Desktop Sidebar -->
+			<aside class="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:border-r md:border-nc-border-subtle/80 md:bg-nc-bg-elevated/85 md:backdrop-blur-xl">
+				<div class="px-5 py-7 border-b border-nc-border-subtle/60">
+					<a href="/" class="text-2xl font-display font-bold tracking-wide text-nc-text-primary hover:text-nc-accent-primary transition-colors">Informed</a>
+					<p class="mt-1 text-xs uppercase tracking-[0.16em] text-nc-text-subtle">Your campus, connected</p>
 				</div>
-				<nav class="px-3 pb-6">
-					<ul class="space-y-2">
+				<nav class="flex-1 px-3 py-5">
+					<ul class="space-y-1.5">
 						{navItems.map((item) => (
 							<li>
 								<a
 									href={item.href}
-									class={`flex items-center gap-3 rounded-full px-4 py-2 text-sm font-semibold transition ${
+									class={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
 										isActive(item.href)
-											? 'bg-indigo-500 text-white'
-											: 'text-slate-300 hover:bg-slate-700 hover:text-white'
+											? 'bg-nc-accent-primary text-white'
+											: 'text-nc-text-muted hover:bg-nc-bg-card hover:text-nc-text-primary'
 									}`}
 								>
-									<span aria-hidden="true">{item.icon}</span>
+									<span aria-hidden="true" class={`h-5 w-5 ${isActive(item.href) ? 'text-white' : 'text-nc-text-subtle group-hover:text-nc-accent-primary transition-colors'}`}>
+										{item.icon === 'feed' && (
+											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 3.5a1 1 0 011-1h13a1 1 0 011 1v13a1 1 0 01-1 1h-13a1 1 0 01-1-1v-13zm3 2a1 1 0 000 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h5a1 1 0 100-2h-5z"/></svg>
+										)}
+										{item.icon === 'groups' && (
+											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm8 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM2 15.25C2 12.9 3.9 11 6.25 11h.5C9.1 11 11 12.9 11 15.25V17H2v-1.75zm7 1.75v-1.25C9 13.7 8.38 12.38 7.4 11.4c.45-.25.98-.4 1.6-.4h1c2.35 0 4.25 1.9 4.25 4.25V17H9z"/></svg>
+										)}
+										{item.icon === 'people' && (
+											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 16.25C2.5 13.35 4.85 11 7.75 11h4.5c2.9 0 5.25 2.35 5.25 5.25V17h-15v-.75z"/></svg>
+										)}
+										{item.icon === 'saved' && (
+											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+										)}
+										{item.icon === 'profile' && (
+											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10.5A3.75 3.75 0 1010 3a3.75 3.75 0 000 7.5zM3 16.25C3 13.9 4.9 12 7.25 12h5.5C15.1 12 17 13.9 17 16.25V17H3v-.75z"/></svg>
+										)}
+									</span>
 									<span>{item.label}</span>
 								</a>
 							</li>
 						))}
 					</ul>
 				</nav>
+
+				<!-- Logout -->
+				<div class="px-3 pb-5 mt-auto border-t border-nc-border-subtle/60 pt-4">
+					<button
+						type="button"
+						id="logoutBtn"
+						class="group flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-medium text-nc-text-subtle hover:bg-nc-destructive/8 hover:text-nc-destructive transition-all duration-200"
+					>
+						<span aria-hidden="true" class="h-4 w-4">
+							<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd"/></svg>
+						</span>
+						<span>Sign Out</span>
+					</button>
+				</div>
 			</aside>
 
 			<div class="md:pl-64">
-				<header class="sticky top-0 z-20 border-b border-slate-700 bg-slate-900/95 backdrop-blur md:hidden">
+				<!-- Mobile Top Bar -->
+				<header class="sticky top-0 z-20 border-b border-nc-border-subtle/70 bg-nc-bg-root/95 backdrop-blur md:hidden">
 					<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-						<h1 class="text-base font-bold text-slate-100">Informed</h1>
-						<div class="avatar flex items-center justify-center bg-slate-700 text-xs font-bold text-slate-200">ME</div>
+						<h1 class="text-base font-display font-bold tracking-wide text-nc-text-primary">Informed</h1>
+						<div class="flex items-center gap-3">
+							<a href="/notifications" class="relative text-nc-text-subtle hover:text-nc-accent-primary transition-colors" aria-label="Notifications">
+								<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z"/></svg>
+								<span class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-nc-destructive border-2 border-nc-bg-root"></span>
+							</a>
+							<a href="/profile/me" class="h-8 w-8 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-[10px] font-bold text-white">ME</a>
+						</div>
 					</div>
 				</header>
 
 				<slot />
 			</div>
 
-			<nav class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-700 bg-slate-900/95 backdrop-blur md:hidden">
-				<ul class="grid grid-cols-4">
+			<!-- Mobile Bottom Nav -->
+			<nav class="fixed inset-x-0 bottom-0 z-30 border-t border-nc-border-subtle/70 bg-nc-bg-root/95 backdrop-blur md:hidden">
+				<ul class="grid grid-cols-5">
 					{navItems.map((item) => (
 						<li>
 							<a
 								href={item.href}
-								class={`flex flex-col items-center gap-1 px-2 py-2 text-[11px] font-semibold transition ${
-									isActive(item.href) ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+								class={`flex flex-col items-center gap-1 px-2 py-2.5 text-[11px] font-semibold transition-all duration-200 ${
+									isActive(item.href) ? 'text-nc-accent-primary' : 'text-nc-text-subtle hover:text-nc-text-primary'
 								}`}
 							>
-								<span aria-hidden="true" class="text-base">{item.icon}</span>
+								<span aria-hidden="true" class="h-5 w-5">
+									{item.icon === 'feed' && (
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 3.5a1 1 0 011-1h13a1 1 0 011 1v13a1 1 0 01-1 1h-13a1 1 0 01-1-1v-13zm3 2a1 1 0 000 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h5a1 1 0 100-2h-5z"/></svg>
+									)}
+									{item.icon === 'groups' && (
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm8 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM2 15.25C2 12.9 3.9 11 6.25 11h.5C9.1 11 11 12.9 11 15.25V17H2v-1.75zm7 1.75v-1.25C9 13.7 8.38 12.38 7.4 11.4c.45-.25.98-.4 1.6-.4h1c2.35 0 4.25 1.9 4.25 4.25V17H9z"/></svg>
+									)}
+									{item.icon === 'people' && (
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 16.25C2.5 13.35 4.85 11 7.75 11h4.5c2.9 0 5.25 2.35 5.25 5.25V17h-15v-.75z"/></svg>
+									)}
+									{item.icon === 'saved' && (
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+									)}
+									{item.icon === 'profile' && (
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10.5A3.75 3.75 0 1010 3a3.75 3.75 0 000 7.5zM3 16.25C3 13.9 4.9 12 7.25 12h5.5C15.1 12 17 13.9 17 16.25V17H3v-.75z"/></svg>
+									)}
+								</span>
 								<span>{item.label}</span>
 							</a>
 						</li>
@@ -85,5 +155,22 @@ const isActive = (href: string): boolean => {
 				</ul>
 			</nav>
 		</div>
+
+		<script>
+			const logoutBtn = document.getElementById('logoutBtn');
+			if (logoutBtn) {
+				logoutBtn.addEventListener('click', async () => {
+					try {
+						const baseUrl = (window as any).__PUBLIC_API_BASE_URL || '';
+						await fetch(`${baseUrl}/api/auth/sign-out`, {
+							method: 'POST',
+							credentials: 'include',
+						});
+					} catch {}
+					document.cookie = 'better-auth.session_token=; Max-Age=0; path=/';
+					window.location.href = '/login';
+				});
+			}
+		</script>
 	</body>
 </html>
