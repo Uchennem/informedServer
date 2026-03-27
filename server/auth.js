@@ -30,6 +30,7 @@ export const groupMembershipsCollection = database.collection("groupMemberships"
 export const auth = betterAuth({
   database: mongodbAdapter(database, { client: mongoClient }),
   secret: BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
   },
