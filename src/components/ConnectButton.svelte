@@ -45,6 +45,7 @@
   .connect-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.375rem;
     padding: 0.5rem 1rem;
     border-radius: 9999px;
@@ -57,6 +58,13 @@
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-height: 2.5rem;
     border: none;
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .connect-btn {
+      width: auto;
+    }
   }
 
   .connect-btn__icon {

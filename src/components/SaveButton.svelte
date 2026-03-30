@@ -1,19 +1,43 @@
-<script>
+<script lang="ts">
+  import { buildClientApiUrl } from '../lib/api';
+
   export let postId = '';
 
   let saved = false;
   let animating = false;
+  let isLoading = false;
 
-  function handleClick() {
+  async function handleClick() {
+    if (!postId || isLoading) return;
+
+    isLoading = true;
     animating = true;
     setTimeout(() => { animating = false; }, 300);
-    saved = !saved;
+
+    try {
+      const response = await fetch(buildClientApiUrl(`/api/posts/${postId}/save`), {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save post');
+      }
+
+      const payload = await response.json();
+      saved = Boolean(payload?.saved);
+    } catch (error) {
+      console.error('Unable to save post', error);
+    } finally {
+      isLoading = false;
+    }
   }
 </script>
 
 <button
   type="button"
   onclick={handleClick}
+  disabled={isLoading}
   class={`save-btn ${saved ? 'save-btn--saved' : 'save-btn--default'} ${animating ? 'save-btn--pulse' : ''}`}
   aria-pressed={saved}
   aria-label={saved ? 'Remove from saved' : 'Save for later'}
@@ -45,6 +69,11 @@
     width: 1rem;
     height: 1rem;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .save-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
   }
 
   .save-btn--default {

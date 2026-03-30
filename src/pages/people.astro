@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ConnectButton from '../components/ConnectButton.svelte';
+import { buildServerApiUrl } from '../lib/api';
 
 type MatchUser = {
   id?: string;
@@ -12,7 +13,6 @@ type MatchUser = {
   sharedInterests?: string[];
 };
 
-const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
 const authCookieHeader = request.headers.get('cookie') ?? '';
 
@@ -23,11 +23,7 @@ if (!authCookieHeader.includes('better-auth.session_token')) {
 let matches: MatchUser[] = [];
 
 try {
-  if (!baseUrl) {
-    throw new Error('Missing PUBLIC_API_BASE_URL');
-  }
-
-  const response = await fetch(`${baseUrl}/api/users/matches`, {
+  const response = await fetch(buildServerApiUrl('/api/users/matches', Astro.url), {
     headers: {
       cookie: authCookieHeader,
     },
@@ -44,7 +40,7 @@ try {
 
 <Layout>
   <main class="min-h-screen pb-20 md:pb-8">
-    <div class="mx-auto max-w-7xl px-4 py-6 md:py-8">
+    <div class="mx-auto max-w-7xl px-4 py-5 sm:py-6 md:py-8">
       {/* Header */}
       <div class="section-header mb-6">
         <span class="section-eyebrow">Campus connections</span>
@@ -69,7 +65,7 @@ try {
 
       {/* People Grid */}
       {matches.length > 0 ? (
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 stagger-container">
+        <section class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 stagger-container">
           {matches.map((match) => {
             const userId = match.id ?? match._id ?? '';
             const interestTags = match.sharedInterestTags ?? match.sharedInterests ?? [];

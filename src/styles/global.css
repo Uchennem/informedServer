@@ -251,6 +251,22 @@ a.btn:focus-visible,
   margin: 0;
 }
 
+@media (max-width: 640px) {
+  .section-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header .section-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+  }
+
+  .section-header .section-subtitle {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+}
+
 /* ===== Section Divider ===== */
 .section-divider {
   display: flex;
@@ -357,5 +373,11 @@ a.btn:focus-visible,
   :root {
     --nc-accent-primary: #8B83FF;
     --nc-accent-secondary: #B0AAFF;
+  }
+}
+
+@media (max-width: 767px) {
+  .card {
+    border-radius: 1rem;
   }
 }

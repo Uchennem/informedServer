@@ -38,12 +38,18 @@ async function getMembershipCounts() {
 }
 
 router.get("/", async (req, res) => {
+	const userId = res.locals.authSession?.user?.id;
 	const membershipCounts = await getMembershipCounts();
+	const memberships = userId
+		? await groupMembershipsCollection.find({ userId }).toArray()
+		: [];
+	const membershipSet = new Set(memberships.map((entry) => entry.groupId));
 
 	res.json(
 		baseGroups.map((group) => ({
 			...group,
 			memberCount: group.memberCount + (membershipCounts.get(group.id) ?? 0),
+			isMember: membershipSet.has(group.id),
 		})),
 	);
 });
@@ -85,6 +91,31 @@ router.post("/:groupId/join", async (req, res) => {
 	return res.status(201).json({
 		message: "Joined group successfully",
 		joined: true,
+		groupId,
+		memberCount,
+	});
+});
+
+router.delete("/:groupId/leave", async (req, res) => {
+	const { groupId } = req.params;
+	const userId = res.locals.authSession?.user?.id;
+	const group = baseGroups.find((entry) => entry.id === groupId);
+
+	if (!userId) {
+		return res.status(401).json({ error: "Unauthorized" });
+	}
+
+	if (!group) {
+		return res.status(404).json({ error: "Group not found" });
+	}
+
+	await groupMembershipsCollection.deleteOne({ groupId, userId });
+
+	const memberCount = group.memberCount + (await groupMembershipsCollection.countDocuments({ groupId }));
+
+	return res.json({
+		message: "Left group successfully",
+		joined: false,
 		groupId,
 		memberCount,
 	});

@@ -1,15 +1,11 @@
 ---
 export const prerender = false;
 
-const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
+import { buildServerApiUrl } from '../../lib/api';
 const request = Astro.request;
 
-if (!baseUrl) {
-  return Astro.redirect('/feed');
-}
-
 try {
-  const response = await fetch(`${baseUrl}/api/users`, {
+  const response = await fetch(buildServerApiUrl('/api/users', Astro.url), {
     headers: {
       cookie: request.headers.get('cookie') ?? '',
     },

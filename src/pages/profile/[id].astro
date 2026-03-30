@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { buildServerApiUrl } from '../../lib/api';
 
 export const prerender = false;
 
@@ -32,7 +33,6 @@ type Group = {
 };
 
 const { id } = Astro.params;
-const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
 const request = Astro.request;
 const cookieHeader = request.headers.get('cookie') ?? '';
 
@@ -60,12 +60,12 @@ function normalizeUser(payload: unknown): UserProfile | null {
   return null;
 }
 
-if (!id || !baseUrl) {
+if (!id) {
   isNotFound = true;
   Astro.response.status = 404;
 } else {
   try {
-    const userResponse = await fetch(import.meta.env.PUBLIC_API_BASE_URL + '/api/users/' + id, {
+    const userResponse = await fetch(buildServerApiUrl(`/api/users/${id}`, Astro.url), {
       headers: {
         cookie: cookieHeader,
       },
@@ -93,7 +93,9 @@ if (!id || !baseUrl) {
 
   if (!isNotFound) {
     try {
-      const postsResponse = await fetch(`${baseUrl}/api/posts?author=${encodeURIComponent(id)}`, {
+      const postsResponse = await fetch(
+        `${buildServerApiUrl('/api/posts', Astro.url)}?author=${encodeURIComponent(id)}`,
+        {
         headers: {
           cookie: cookieHeader,
         },
@@ -112,7 +114,7 @@ if (!id || !baseUrl) {
     }
 
     try {
-      const currentUserResponse = await fetch(`${baseUrl}/api/users`, {
+      const currentUserResponse = await fetch(buildServerApiUrl('/api/users', Astro.url), {
         headers: {
           cookie: cookieHeader,
         },
@@ -146,7 +148,7 @@ const categoryBadgeColors: Record<string, string> = {
 
 <Layout>
   <main class="min-h-screen pb-20 md:pb-8">
-    <div class="max-w-4xl mx-auto px-4 py-6 md:py-8">
+    <div class="max-w-4xl mx-auto px-4 py-5 sm:py-6 md:py-8">
       {
         isNotFound || !user ? (
           <section class="card text-center py-12 px-6">
@@ -167,7 +169,7 @@ const categoryBadgeColors: Record<string, string> = {
                 <div class="absolute bottom-0 left-0 w-60 h-60 bg-gradient-to-tr from-nc-accent-secondary/10 via-transparent to-transparent rounded-full blur-3xl"></div>
               </div>
 
-              <div class="relative z-10 p-8 md:p-12">
+              <div class="relative z-10 p-5 sm:p-6 md:p-12">
                 <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center mb-6">
                   {/* Avatar */}
                   <div class="relative flex-shrink-0">
@@ -183,7 +185,7 @@ const categoryBadgeColors: Record<string, string> = {
 
                   {/* Profile Info */}
                   <div class="flex-1">
-                    <h1 class="text-4xl md:text-5xl font-bold text-nc-text-primary font-display tracking-wider mb-2">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-nc-text-primary font-display tracking-wider mb-2 break-words">
                       {user.name ?? 'Unnamed User'}
                     </h1>
                     <div class="flex flex-wrap gap-2 mb-3">
@@ -215,7 +217,7 @@ const categoryBadgeColors: Record<string, string> = {
             </section>
 
             {/* Tab Navigation */}
-            <div class="flex gap-1 mb-6 border-b border-nc-border-subtle/50 overflow-x-auto" id="profileTabs">
+            <div class="flex gap-1 mb-6 border-b border-nc-border-subtle/50 overflow-x-auto scrollbar-thin -mx-1 px-1" id="profileTabs">
               <button type="button" class="profile-tab profile-tab--active" data-tab="activity">Activity</button>
               <button type="button" class="profile-tab" data-tab="interests">Interests</button>
               <button type="button" class="profile-tab" data-tab="about">About</button>
@@ -224,7 +226,7 @@ const categoryBadgeColors: Record<string, string> = {
             {/* Tab Content: Activity */}
             <div id="tab-activity" class="tab-panel">
               {recentPosts.length > 0 ? (
-                <section class="card p-6">
+                <section class="card p-4 sm:p-6">
                   <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
                     Recent Posts
                   </h2>
@@ -264,7 +266,7 @@ const categoryBadgeColors: Record<string, string> = {
             {/* Tab Content: Interests */}
             <div id="tab-interests" class="tab-panel hidden">
               {interestTags.length > 0 ? (
-                <section class="card p-6">
+                <section class="card p-4 sm:p-6">
                   <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
                     Interests
                   </h2>
@@ -285,22 +287,22 @@ const categoryBadgeColors: Record<string, string> = {
 
             {/* Tab Content: About */}
             <div id="tab-about" class="tab-panel hidden">
-              <section class="card p-6">
+              <section class="card p-4 sm:p-6">
                 <h2 class="section-divider text-lg font-bold text-nc-text-primary font-display uppercase tracking-wide mb-4">
                   About
                 </h2>
                 <div class="space-y-4">
-                  <div class="flex items-center gap-3">
-                    <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Name</span>
-                    <span class="text-nc-text-primary text-sm font-medium">{user.name ?? '—'}</span>
+                  <div class="grid gap-1 sm:grid-cols-[5rem_1fr] sm:items-center">
+                    <span class="text-nc-text-subtle text-sm">Name</span>
+                    <span class="text-nc-text-primary text-sm font-medium break-words">{user.name ?? '—'}</span>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Major</span>
-                    <span class="text-nc-text-primary text-sm font-medium">{user.major ?? 'Undeclared'}</span>
+                  <div class="grid gap-1 sm:grid-cols-[5rem_1fr] sm:items-center">
+                    <span class="text-nc-text-subtle text-sm">Major</span>
+                    <span class="text-nc-text-primary text-sm font-medium break-words">{user.major ?? 'Undeclared'}</span>
                   </div>
                   {user.year && (
-                    <div class="flex items-center gap-3">
-                      <span class="text-nc-text-subtle text-sm w-20 flex-shrink-0">Year</span>
+                    <div class="grid gap-1 sm:grid-cols-[5rem_1fr] sm:items-center">
+                      <span class="text-nc-text-subtle text-sm">Year</span>
                       <span class="text-nc-text-primary text-sm font-medium">Class of {user.year}</span>
                     </div>
                   )}

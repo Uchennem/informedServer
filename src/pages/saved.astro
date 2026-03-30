@@ -1,10 +1,41 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PostCard from '../components/PostCard.astro';
+import { buildServerApiUrl } from '../lib/api';
 
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
 
 if (!authCookieHeader.includes('better-auth.session_token')) {
   return Astro.redirect('/login');
+}
+
+type SavedPost = {
+  id?: string;
+  _id?: string;
+  title: string;
+  description?: string;
+  author: string;
+  category: string;
+  rsvpCount: number;
+  date: string;
+  location?: string;
+};
+
+let savedPosts: SavedPost[] = [];
+
+try {
+  const response = await fetch(buildServerApiUrl('/api/posts/saved', Astro.url), {
+    headers: {
+      cookie: authCookieHeader,
+    },
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    savedPosts = Array.isArray(data) ? data : [];
+  }
+} catch {
+  savedPosts = [];
 }
 ---
 
@@ -21,33 +52,13 @@ if (!authCookieHeader.includes('better-auth.session_token')) {
 
       {/* Temporal Sections */}
       <section class="space-y-6">
-        {/* Tonight */}
-        <div>
-          <h2 class="text-sm font-bold text-nc-text-muted uppercase tracking-wider mb-3">Tonight</h2>
-          <div class="card p-5 text-center">
-            <svg class="w-7 h-7 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-            </svg>
-            <p class="text-nc-text-muted text-sm mb-2">Nothing saved for tonight yet</p>
-            <a href="/feed" class="text-nc-accent-primary text-sm font-semibold hover:underline">Browse events →</a>
+        {savedPosts.length > 0 ? (
+          <div class="space-y-4">
+            {savedPosts.map((post) => (
+              <PostCard post={post} />
+            ))}
           </div>
-        </div>
-
-        {/* This Week */}
-        <div>
-          <h2 class="text-sm font-bold text-nc-text-muted uppercase tracking-wider mb-3">This Week</h2>
-          <div class="card p-5 text-center">
-            <svg class="w-7 h-7 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <p class="text-nc-text-muted text-sm mb-2">No events saved for this week</p>
-            <a href="/feed" class="text-nc-accent-primary text-sm font-semibold hover:underline">Browse events →</a>
-          </div>
-        </div>
-
-        {/* Coming Up */}
-        <div>
-          <h2 class="text-sm font-bold text-nc-text-muted uppercase tracking-wider mb-3">Coming Up</h2>
+        ) : (
           <div class="card p-5 text-center">
             <svg class="w-7 h-7 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
@@ -55,30 +66,7 @@ if (!authCookieHeader.includes('better-auth.session_token')) {
             <p class="text-nc-text-muted text-sm mb-2">Save events from the feed to plan ahead</p>
             <a href="/feed" class="text-nc-accent-primary text-sm font-semibold hover:underline">Browse events →</a>
           </div>
-        </div>
-
-        {/* Someday / No Date */}
-        <div>
-          <h2 class="text-sm font-bold text-nc-text-muted uppercase tracking-wider mb-3">Someday</h2>
-          <div class="card p-5 text-center">
-            <svg class="w-7 h-7 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-nc-text-muted text-sm mb-0">Events without a set date land here</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Saved Groups */}
-      <section class="mt-10">
-        <h2 class="text-sm font-bold text-nc-text-muted uppercase tracking-wider mb-3">Saved Groups</h2>
-        <div class="card p-5 text-center">
-          <svg class="w-7 h-7 mx-auto text-nc-text-subtle mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-          </svg>
-          <p class="text-nc-text-muted text-sm mb-2">Groups you're interested in will appear here</p>
-          <a href="/groups" class="text-nc-accent-primary text-sm font-semibold hover:underline">Explore groups →</a>
-        </div>
+        )}
       </section>
 
     </div>
