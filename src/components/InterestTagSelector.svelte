@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buildClientApiUrl } from '../lib/api';
+
   type Props = {
     availableTags?: string[];
   };
@@ -28,9 +30,11 @@
     { label: 'Sustainability', icon: '🌱' },
   ];
 
-  const tags = availableTags.length > 0
-    ? availableTags.map(t => ({ label: t, icon: '•' }))
-    : defaultTags;
+  const tags = $derived(
+    availableTags.length > 0
+      ? availableTags.map(t => ({ label: t, icon: '•' }))
+      : defaultTags,
+  );
 
   let selected = $state<Set<string>>(new Set());
   let isSubmitting = $state(false);
@@ -56,21 +60,25 @@
     errorMessage = '';
 
     try {
-      const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
-      if (!baseUrl) throw new Error('Missing API URL');
-
-      const response = await fetch(`${baseUrl}/api/users/interests`, {
+      const response = await fetch(buildClientApiUrl('/api/users/interests'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interests: Array.from(selected) }),
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || 'Failed to save interests');
+      }
+
       window.location.href = '/feed';
-    } catch {
-      // Gracefully redirect even if API doesn't exist yet
-      window.location.href = '/feed';
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = 'Could not save interests. Please try again.';
+      }
     } finally {
       isSubmitting = false;
     }
@@ -107,13 +115,6 @@
       {isSubmitting ? 'Saving...' : `Continue (${selected.size} selected)`}
     </button>
 
-    <a
-      href="/feed"
-      class="text-sm text-nc-text-subtle hover:text-nc-text-muted transition-colors"
-      style="text-decoration: none;"
-    >
-      Skip for now →
-    </a>
   </div>
 </div>
 

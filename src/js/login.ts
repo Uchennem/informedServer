@@ -1,8 +1,11 @@
 import { authClient } from '../lib/authClient';
+import { buildClientApiUrl } from '../lib/api';
 
 // ===== Constants =====
 const LOGIN_REDIRECT_URL = '/feed';
+const ONBOARDING_REDIRECT_URL = '/onboarding';
 const LOGIN_SIGN_IN_TIMEOUT = 2000;
+const CURRENT_USER_API_ENDPOINT = buildClientApiUrl('/api/users/me');
 
 // ===== Type Definitions =====
 interface LoginFormData {
@@ -165,13 +168,30 @@ function setLoginLoadingState(isLoading: boolean): void {
 /**
  * Show success message and redirect
  */
-function handleLoginSignInSuccess(): void {
+function handleLoginSignInSuccess(redirectUrl: string): void {
   successMessage.textContent = 'Sign in successful! Redirecting...';
   successMessage.style.display = 'block';
 
   setTimeout(() => {
-    window.location.href = LOGIN_REDIRECT_URL;
+    window.location.href = redirectUrl;
   }, LOGIN_SIGN_IN_TIMEOUT);
+}
+
+async function resolveLoginRedirectUrl(): Promise<string> {
+  try {
+    const response = await fetch(CURRENT_USER_API_ENDPOINT, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return LOGIN_REDIRECT_URL;
+    }
+
+    const payload = await response.json();
+    return payload?.needsOnboarding ? ONBOARDING_REDIRECT_URL : LOGIN_REDIRECT_URL;
+  } catch {
+    return LOGIN_REDIRECT_URL;
+  }
 }
 
 // ===== Event Listeners =====
@@ -238,7 +258,8 @@ form.addEventListener('submit', async (e: SubmitEvent): Promise<void> => {
       throw new Error(errorMsg);
     }
 
-    handleLoginSignInSuccess();
+    const redirectUrl = await resolveLoginRedirectUrl();
+    handleLoginSignInSuccess(redirectUrl);
   } catch (error) {
     displayLoginUserError(error);
     setLoginLoadingState(false);

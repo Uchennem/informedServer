@@ -1,11 +1,44 @@
 ---
 import '../styles/global.css';
 import InterestTagSelector from '../components/InterestTagSelector.svelte';
+import { buildServerApiUrl } from '../lib/api';
+
+export const prerender = false;
+
+const onboardingTags = [
+	'Study',
+	'Fitness',
+	'Gaming',
+	'Food',
+	'Faith',
+	'Social',
+	'Tech',
+	'Arts',
+	'Sports',
+	'Music',
+];
 
 // Auth check
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
 if (!authCookieHeader.includes('better-auth.session_token')) {
   return Astro.redirect('/login');
+}
+
+try {
+	const response = await fetch(buildServerApiUrl('/api/users/me', Astro.url), {
+		headers: {
+			cookie: authCookieHeader,
+		},
+	});
+
+	if (response.ok) {
+		const payload = await response.json();
+		if (!payload?.needsOnboarding) {
+			return Astro.redirect('/feed');
+		}
+	}
+} catch {
+	// If we cannot verify onboarding state, let the user continue here.
 }
 ---
 
@@ -49,7 +82,7 @@ if (!authCookieHeader.includes('better-auth.session_token')) {
 			</div>
 
 			<div class="relative z-10 w-full animate-slide-up" style="animation-delay: 0.2s;">
-				<InterestTagSelector client:load />
+				<InterestTagSelector client:load availableTags={onboardingTags} />
 			</div>
 		</div>
 	</body>
