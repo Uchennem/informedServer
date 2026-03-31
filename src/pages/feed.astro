@@ -1,6 +1,7 @@
 ---
 import PostCard from '../components/PostCard.astro';
 import ConnectButton from '../components/ConnectButton.svelte';
+import CreatePostForm from '../components/CreatePostForm.svelte';
 import Layout from '../layouts/Layout.astro';
 import { buildServerApiUrl } from '../lib/api';
 
@@ -119,8 +120,13 @@ try {
         </div>
       </div>
 
+      {/* Create Post Form */}
+      <div class="mb-6">
+        <CreatePostForm client:load />
+      </div>
+
       {/* Posts List — with inline people card after 3rd post */}
-      <div class="space-y-4 stagger-container">
+      <div class="space-y-4 stagger-container" id="postsContainer">
         {
           posts.length > 0 ? (
             posts.map((post, index) => (
@@ -257,20 +263,25 @@ try {
     });
   }
 
+  // Reload the SSR post list when a new post is successfully created
+  window.addEventListener('informed:post-created', () => {
+    window.location.reload();
+  });
+
   // Dismiss people suggestion cards
   document.querySelectorAll('#dismissPeopleCard, .dismiss-people-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const card = btn.closest('.card');
-      if (card) {
+	    const card = btn.closest('.card');
+      if (card instanceof HTMLElement) {
         card.style.transition = 'opacity 0.3s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease';
         card.style.opacity = '0';
         card.style.maxHeight = card.scrollHeight + 'px';
         requestAnimationFrame(() => {
-          (card as HTMLElement).style.maxHeight = '0';
-          (card as HTMLElement).style.marginTop = '0';
-          (card as HTMLElement).style.marginBottom = '0';
-          (card as HTMLElement).style.padding = '0';
-          (card as HTMLElement).style.overflow = 'hidden';
+          card.style.maxHeight = '0';
+          card.style.marginTop = '0';
+          card.style.marginBottom = '0';
+          card.style.padding = '0';
+          card.style.overflow = 'hidden';
         });
         setTimeout(() => card.remove(), 500);
       }
