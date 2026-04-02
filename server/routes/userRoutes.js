@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { profilesCollection, usersCollection } from "../auth.js";
+import { appDatabase, profilesCollection, usersCollection } from "../auth.js";
 import { ObjectId } from "mongodb";
 
 const router = Router();
+const connectionRequestsCollection = appDatabase.collection("connectionRequests");
 
 function getUserInterests(user) {
   if (!user || typeof user !== "object") {
@@ -70,6 +71,25 @@ async function findUserForSession(sessionUser) {
   }
 
   return user;
+}
+
+function getCanonicalUserId(user, fallbackId = null) {
+  return user?._id?.toString() || user?.id || fallbackId;
+}
+
+async function findUserByAnyId(id) {
+  if (!id) {
+    return null;
+  }
+
+  if (ObjectId.isValid(id)) {
+    const byObjectId = await usersCollection.findOne({ _id: new ObjectId(id) });
+    if (byObjectId) {
+      return byObjectId;
+    }
+  }
+
+  return usersCollection.findOne({ id });
 }
 
 router.get("/", async (req, res) => {
@@ -258,6 +278,98 @@ router.post("/interests", async (req, res) => {
   } catch (error) {
     console.error("Error saving user interests:", error);
     return res.status(500).json({ error: "Failed to save interests" });
+  }
+});
+
+router.post("/:id/connect", async (req, res) => {
+  const sessionUser = res.locals.authSession?.user;
+  const requesterSessionId = sessionUser?.id;
+  const targetParamId = req.params.id;
+
+  if (!requesterSessionId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const requesterUser = await findUserForSession(sessionUser);
+    if (!requesterUser) {
+      return res.status(404).json({ error: "Requester not found" });
+    }
+
+    const targetUser = await findUserByAnyId(targetParamId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "Target user not found" });
+    }
+
+    const requesterId = getCanonicalUserId(requesterUser, requesterSessionId);
+    const targetId = getCanonicalUserId(targetUser);
+
+    if (!requesterId || !targetId) {
+      return res.status(400).json({ error: "Invalid connection request" });
+    }
+
+    if (requesterId === targetId) {
+      return res.status(400).json({ error: "Cannot connect with yourself" });
+    }
+
+    const now = new Date();
+
+    await connectionRequestsCollection.updateOne(
+      { requesterId, targetId },
+      {
+        $set: {
+          requesterId,
+          targetId,
+          status: "pending",
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { upsert: true },
+    );
+
+    return res.json({ requested: true });
+  } catch (error) {
+    console.error("Error creating connection request:", error);
+    return res.status(500).json({ error: "Failed to create connection request" });
+  }
+});
+
+router.delete("/:id/connect", async (req, res) => {
+  const sessionUser = res.locals.authSession?.user;
+  const requesterSessionId = sessionUser?.id;
+  const targetParamId = req.params.id;
+
+  if (!requesterSessionId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const requesterUser = await findUserForSession(sessionUser);
+    if (!requesterUser) {
+      return res.status(404).json({ error: "Requester not found" });
+    }
+
+    const targetUser = await findUserByAnyId(targetParamId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "Target user not found" });
+    }
+
+    const requesterId = getCanonicalUserId(requesterUser, requesterSessionId);
+    const targetId = getCanonicalUserId(targetUser);
+
+    if (!requesterId || !targetId) {
+      return res.status(400).json({ error: "Invalid connection request" });
+    }
+
+    await connectionRequestsCollection.deleteOne({ requesterId, targetId });
+
+    return res.json({ requested: false });
+  } catch (error) {
+    console.error("Error deleting connection request:", error);
+    return res.status(500).json({ error: "Failed to delete connection request" });
   }
 });
 

@@ -1,5 +1,4 @@
 import { buildClientApiUrl } from '../lib/api';
-import { authClient } from '../lib/authClient';
 
 // ===== Constants =====
 const REGISTER_REDIRECT_URL = '/feed';
@@ -23,6 +22,11 @@ interface PasswordRequirements {
   lowercase: boolean;
   number: boolean;
   special: boolean;
+}
+
+interface ApiResponse {
+  message?: string;
+  error?: string;
 }
 
 // ===== DOM Element References =====
@@ -393,17 +397,22 @@ registerForm.addEventListener('submit', async (e: SubmitEvent): Promise<void> =>
     const formData = getRegisterFormData();
 
     // Step 1: Create account
-    const { data, error } = await authClient.signUp.email({
-      email: formData.email,
-      password: formData.password,
-      name: formData.name,
-      fetchOptions: {
-        credentials: 'include',
+    const signUpResponse = await fetch(buildClientApiUrl('/api/auth/sign-up/email'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+      }),
     });
 
-    if (error || !data) {
-      const errorMsg = error?.message || 'Registration failed';
+    if (!signUpResponse.ok) {
+      const payload: ApiResponse = await signUpResponse.json().catch(() => ({}));
+      const errorMsg = payload.message || payload.error || 'Registration failed';
       throw new Error(errorMsg);
     }
 

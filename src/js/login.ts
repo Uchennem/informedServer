@@ -1,4 +1,3 @@
-import { authClient } from '../lib/authClient';
 import { buildClientApiUrl } from '../lib/api';
 
 // ===== Constants =====
@@ -245,16 +244,21 @@ form.addEventListener('submit', async (e: SubmitEvent): Promise<void> => {
   try {
     const formData = getLoginFormData();
 
-    const { data, error } = await authClient.signIn.email({
-      email: formData.email,
-      password: formData.password,
-      fetchOptions: {
-        credentials: 'include',
+    const signInResponse = await fetch(buildClientApiUrl('/api/auth/sign-in/email'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+      }),
     });
 
-    if (error || !data) {
-      const errorMsg = error?.message || 'Sign in failed. Please check your credentials.';
+    if (!signInResponse.ok) {
+      const payload: ApiResponse = await signInResponse.json().catch(() => ({}));
+      const errorMsg = payload.message || payload.error || 'Sign in failed. Please check your credentials.';
       throw new Error(errorMsg);
     }
 

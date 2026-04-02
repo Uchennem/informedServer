@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buildClientApiUrl } from '../lib/api';
+
   type Props = {
     userId: string;
     mode?: 'view' | 'connect';
@@ -6,15 +8,47 @@
 
   let { userId, mode = 'view' }: Props = $props();
   let isPending = $state(false);
+  let isSubmitting = $state(false);
   let animating = $state(false);
+  let errorMessage = $state('');
 
-  function goToProfile() {
+  async function toggleConnectionRequest() {
+    if (!userId || isSubmitting) return;
+
+    const nextPending = !isPending;
+
+    animating = true;
+    setTimeout(() => {
+      animating = false;
+    }, 300);
+
+    isSubmitting = true;
+    errorMessage = '';
+
+    try {
+      const response = await fetch(buildClientApiUrl(`/api/users/${userId}/connect`), {
+        method: nextPending ? 'POST' : 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Connection request failed');
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      isPending = Boolean(payload?.requested ?? nextPending);
+    } catch {
+      errorMessage = 'Unable to update connection right now';
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  async function goToProfile() {
     if (!userId) return;
 
     if (mode === 'connect') {
-      animating = true;
-      setTimeout(() => { animating = false; }, 300);
-      isPending = !isPending;
+      await toggleConnectionRequest();
       return;
     }
 
@@ -25,10 +59,14 @@
 <button
   type="button"
   onclick={goToProfile}
+  disabled={isSubmitting}
   class={`connect-btn ${mode === 'connect' && isPending ? 'connect-btn--pending' : 'connect-btn--default'} ${animating ? 'connect-btn--pulse' : ''}`}
 >
   {#if mode === 'connect'}
-    {#if isPending}
+    {#if isSubmitting}
+      <svg class="connect-btn__icon animate-spin" viewBox="0 0 20 20" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="7" stroke-width="2" stroke-dasharray="30" stroke-dashoffset="10"/></svg>
+      Saving...
+    {:else if isPending}
       <svg class="connect-btn__icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
       Requested
     {:else}
@@ -40,6 +78,10 @@
     View Profile
   {/if}
 </button>
+
+{#if mode === 'connect' && errorMessage}
+  <p class="text-xs mt-2 mb-0" style="color: var(--nc-destructive);">{errorMessage}</p>
+{/if}
 
 <style>
   .connect-btn {
@@ -102,6 +144,11 @@
 
   .connect-btn:active {
     transform: scale(0.97);
+  }
+
+  .connect-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
   }
 
   @keyframes connectPulse {
