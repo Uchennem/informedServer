@@ -8,6 +8,7 @@ type Post = {
   _id?: string;
   title: string;
   description?: string;
+  body?: string;
   author: string;
   category: string;
   rsvpCount: number;
@@ -21,24 +22,23 @@ type Props = {
 
 const { post } = Astro.props;
 
-// Category badge colors
 const categoryClasses: Record<string, string> = {
-  'Academic': 'bg-[#60A5FA]/15 text-[#60A5FA]',
-  'Social': 'bg-pink-500/15 text-pink-400',
-  'Sports': 'bg-[#34D399]/15 text-[#34D399]',
-  'Faith': 'bg-[#6C63FF]/15 text-[#6C63FF]',
-  'Arts': 'bg-[#FBBF24]/15 text-[#FBBF24]',
+  Academic: 'bg-[#60A5FA]/15 text-[#60A5FA]',
+  Social: 'bg-pink-500/15 text-pink-400',
+  Sports: 'bg-[#34D399]/15 text-[#34D399]',
+  Faith: 'bg-[#6C63FF]/15 text-[#6C63FF]',
+  Arts: 'bg-[#FBBF24]/15 text-[#FBBF24]',
 };
 
-const badgeClass = categoryClasses[post.category] || categoryClasses['Academic'];
+const badgeClass = categoryClasses[post.category] || categoryClasses.Academic;
 const authorInitial = (post.author?.[0] ?? '?').toUpperCase();
+const content = post.description ?? post.body ?? '';
+const postId = post.id ?? post._id ?? '';
 ---
 
 <article class="card group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 p-4 sm:p-5 stagger-item">
-  {/* Category accent bar — 3px for visibility */}
   <div class="absolute top-0 left-0 right-0 h-[3px] bg-nc-accent-primary"></div>
 
-  {/* Top row: avatar + title + save */}
   <div class="flex items-start gap-3 mb-3">
     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
       {authorInitial}
@@ -48,16 +48,14 @@ const authorInitial = (post.author?.[0] ?? '?').toUpperCase();
       <span class="text-xs text-nc-text-muted">{post.author}</span>
     </div>
     <div class="flex-shrink-0">
-      <SaveButton client:load postId={post.id ?? post._id ?? ''} />
+      <SaveButton client:load postId={postId} />
     </div>
   </div>
 
-  {/* Description — always show placeholder if empty */}
-  <p class="text-sm text-nc-text-muted mb-3 line-clamp-2">
-    {post.description || 'Tap to see full event details and RSVP.'}
+  <p class="text-sm text-nc-text-muted mb-3 line-clamp-3">
+    {content || 'Tap to see full event details and RSVP.'}
   </p>
 
-  {/* Meta row: date, location, category */}
   <div class="flex items-center gap-2 sm:gap-3 mb-4 flex-wrap">
     <span class="inline-flex items-center gap-1.5 text-xs text-nc-text-subtle">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,16 +79,15 @@ const authorInitial = (post.author?.[0] ?? '?').toUpperCase();
     </span>
   </div>
 
-  {/* Footer: attendee count (separate) + RSVP button */}
   <div class="flex flex-col gap-3 pt-3 border-t border-nc-border-subtle/50 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-1.5 text-xs text-nc-text-muted min-w-0">
       <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
         <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
       </svg>
-      <RSVPCount client:load postId={post.id ?? post._id ?? ''} initialCount={post.rsvpCount} />
+      <RSVPCount client:load postId={postId} initialCount={post.rsvpCount} />
     </div>
     <div class="w-full sm:w-auto">
-      <RSVPButton client:load postId={post.id ?? post._id ?? ''} initialCount={post.rsvpCount} />
+      <RSVPButton client:load postId={postId} initialCount={post.rsvpCount} />
     </div>
   </div>
 </article>
