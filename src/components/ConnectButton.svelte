@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { buildClientApiUrl } from '../lib/api';
 
   type Props = {
@@ -13,11 +14,7 @@
   let animating = $state(false);
   let errorMessage = $state('');
 
-  $effect(() => {
-    if (mode !== 'connect' || isSubmitting) {
-      return;
-    }
-
+  onMount(() => {
     isPending = Boolean(initialRequested);
   });
 
