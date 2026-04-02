@@ -1,11 +1,27 @@
 ---
 import '../styles/global.css';
+import { buildServerApiUrl } from '../lib/api';
 
 // Check if user is already authenticated by looking for auth cookie
 const authCookie = Astro.request.headers.get('cookie')?.includes('better-auth.session_token');
 
 if (authCookie) {
-  return Astro.redirect('/feed');
+	try {
+		const response = await fetch(buildServerApiUrl('/api/users/me', Astro.url), {
+			headers: {
+				cookie: Astro.request.headers.get('cookie') ?? '',
+			},
+		});
+
+		if (response.ok) {
+			const payload = await response.json();
+			return Astro.redirect(payload?.needsOnboarding ? '/onboarding' : '/feed');
+		}
+	} catch {
+		// Fallback to feed if onboarding status cannot be resolved.
+	}
+
+	return Astro.redirect('/feed');
 }
 ---
 

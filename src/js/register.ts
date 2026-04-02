@@ -3,8 +3,10 @@ import { authClient } from '../lib/authClient';
 
 // ===== Constants =====
 const REGISTER_REDIRECT_URL = '/feed';
+const ONBOARDING_REDIRECT_URL = '/onboarding';
 const REGISTER_CREATION_TIMEOUT = 2000;
 const PROFILE_API_ENDPOINT = buildClientApiUrl('/api/users/profile');
+const CURRENT_USER_API_ENDPOINT = buildClientApiUrl('/api/users/me');
 
 // ===== Type Definitions =====
 interface RegisterFormData {
@@ -294,24 +296,41 @@ function setRegisterLoadingState(isLoading: boolean): void {
 /**
  * Show success message and redirect
  */
-function handleRegisterSuccess(): void {
+function handleRegisterSuccess(redirectUrl: string): void {
   regSuccessMessage.textContent = 'Account created successfully! Redirecting...';
   regSuccessMessage.style.display = 'block';
 
   setTimeout(() => {
-    window.location.href = REGISTER_REDIRECT_URL;
+    window.location.href = redirectUrl;
   }, REGISTER_CREATION_TIMEOUT);
 }
 
-function handleRegisterPartialSuccess(): void {
+function handleRegisterPartialSuccess(redirectUrl: string): void {
   regSuccessMessage.textContent = 'Account created successfully, but your profile details could not be saved yet. Redirecting...';
   regSuccessMessage.style.display = 'block';
   regErrorMessage.textContent = 'Your account is ready. Please update your profile details after you sign in.';
   regErrorMessage.style.display = 'block';
 
   setTimeout(() => {
-    window.location.href = REGISTER_REDIRECT_URL;
+    window.location.href = redirectUrl;
   }, REGISTER_CREATION_TIMEOUT);
+}
+
+async function resolveRegisterRedirectUrl(): Promise<string> {
+  try {
+    const response = await fetch(CURRENT_USER_API_ENDPOINT, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return REGISTER_REDIRECT_URL;
+    }
+
+    const payload = await response.json();
+    return payload?.needsOnboarding ? ONBOARDING_REDIRECT_URL : REGISTER_REDIRECT_URL;
+  } catch {
+    return REGISTER_REDIRECT_URL;
+  }
 }
 
 // ===== Event Listeners =====
@@ -402,11 +421,13 @@ registerForm.addEventListener('submit', async (e: SubmitEvent): Promise<void> =>
     });
 
     if (!profileResponse.ok) {
-      handleRegisterPartialSuccess();
+      const partialRedirectUrl = await resolveRegisterRedirectUrl();
+      handleRegisterPartialSuccess(partialRedirectUrl);
       return;
     }
 
-    handleRegisterSuccess();
+    const redirectUrl = await resolveRegisterRedirectUrl();
+    handleRegisterSuccess(redirectUrl);
   } catch (error) {
     displayRegisterUserError(error);
     setRegisterLoadingState(false);

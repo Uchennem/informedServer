@@ -4,232 +4,342 @@ import { ObjectId } from "mongodb";
 
 const router = Router();
 
-function normalizeInterests(user = {}) {
-	const interests = Array.isArray(user.interests) ? user.interests : [];
-	const interestTags = Array.isArray(user.interestTags) ? user.interestTags : [];
-	return [...new Set([...interests, ...interestTags].filter(Boolean))];
+function getUserInterests(user) {
+  if (!user || typeof user !== "object") {
+    return [];
+  }
+
+  const candidate = Array.isArray(user.interests)
+    ? user.interests
+    : Array.isArray(user.interestTags)
+      ? user.interestTags
+      : [];
+
+  return candidate
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function normalizeInterests(interests) {
+  if (!Array.isArray(interests)) {
+    return [];
+  }
+
+  const deduped = new Set();
+
+  for (const value of interests) {
+    if (typeof value !== "string") {
+      continue;
+    }
+
+    const normalized = value.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    deduped.add(normalized);
+  }
+
+  return Array.from(deduped);
+}
+
+async function findUserBySessionId(sessionUserId) {
+  if (!sessionUserId) {
+    return null;
+  }
+
+  let user = await usersCollection.findOne({ id: sessionUserId });
+
+  if (!user && ObjectId.isValid(sessionUserId)) {
+    user = await usersCollection.findOne({ _id: new ObjectId(sessionUserId) });
+  }
+
+  return user;
+}
+
+async function findUserForSession(sessionUser) {
+  if (!sessionUser) {
+    return null;
+  }
+
+  let user = await findUserBySessionId(sessionUser.id);
+
+  if (!user && sessionUser.email) {
+    user = await usersCollection.findOne({ email: sessionUser.email });
+  }
+
+  return user;
 }
 
 router.get("/", async (req, res) => {
-	const sessionUser = res.locals.authSession?.user ?? null;
+  const sessionUser = res.locals.authSession?.user ?? null;
 
-	if (!sessionUser) {
-		return res.status(401).json({ error: "Unauthorized" });
-	}
+  if (!sessionUser) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-	let dbUser = null;
-	if (sessionUser.id && ObjectId.isValid(sessionUser.id)) {
-		dbUser = await usersCollection.findOne({ _id: new ObjectId(sessionUser.id) });
-	}
+  try {
+    const user = await findUserForSession(sessionUser);
+    const interests = getUserInterests(user);
+    let profile = null;
 
-	if (!dbUser && sessionUser.email) {
-		dbUser = await usersCollection.findOne({ email: sessionUser.email });
-	}
+    if (sessionUser.id) {
+      profile = await profilesCollection.findOne({ userId: sessionUser.id });
+    }
 
-	let profile = null;
-	if (sessionUser.id) {
-		profile = await profilesCollection.findOne({ userId: sessionUser.id });
-	}
+    return res.json({
+      user: {
+        id: user?._id?.toString() || user?.id || sessionUser.id,
+        _id: user?._id,
+        name: user?.name || sessionUser.name,
+        email: user?.email || sessionUser.email,
+        major: profile?.major,
+        year: profile?.year,
+        bio: user?.bio,
+        avatar: user?.avatar,
+        interestTags: interests,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching current session user:", error);
+    return res.status(500).json({ error: "Failed to fetch current user" });
+  }
+});
 
-	res.json({
-		user: {
-			id: dbUser?._id?.toString() || sessionUser.id,
-			_id: dbUser?._id,
-			name: dbUser?.name || sessionUser.name,
-			email: dbUser?.email || sessionUser.email,
-			major: profile?.major,
-			year: profile?.year,
-			bio: dbUser?.bio,
-			avatar: dbUser?.avatar,
-			interestTags: normalizeInterests(dbUser || {}),
-		},
-	});
+router.get("/me", async (req, res) => {
+  const sessionUser = res.locals.authSession?.user;
+  const userId = sessionUser?.id;
+
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const user = await findUserForSession(sessionUser);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const interests = getUserInterests(user);
+
+    return res.json({
+      id: user._id?.toString() || user.id,
+      name: user.name,
+      email: user.email,
+      interests,
+      interestTags: interests,
+      needsOnboarding: interests.length === 0,
+    });
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+    return res.status(500).json({ error: "Failed to fetch current user" });
+  }
 });
 
 router.get("/matches", async (req, res) => {
-	const sessionUser = res.locals.authSession?.user;
+  const sessionUser = res.locals.authSession?.user;
 
-	if (!sessionUser) {
-		return res.status(401).json({ error: "Unauthorized" });
-	}
+  if (!sessionUser) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-	try {
-		let currentUser = null;
+  try {
+    const currentUser = await findUserForSession(sessionUser);
 
-		if (sessionUser.id && ObjectId.isValid(sessionUser.id)) {
-			currentUser = await usersCollection.findOne({ _id: new ObjectId(sessionUser.id) });
-		}
+    if (!currentUser) {
+      return res.json([]);
+    }
 
-		if (!currentUser && sessionUser.email) {
-			currentUser = await usersCollection.findOne({ email: sessionUser.email });
-		}
+    const currentInterests = getUserInterests(currentUser);
 
-		if (!currentUser) {
-			return res.json([]);
-		}
+    if (currentInterests.length === 0) {
+      return res.json([]);
+    }
 
-		const currentInterests = normalizeInterests(currentUser);
+    const candidates = await usersCollection
+      .find({
+        _id: { $ne: currentUser._id },
+        $or: [
+          { interests: { $in: currentInterests } },
+          { interestTags: { $in: currentInterests } },
+        ],
+      })
+      .limit(20)
+      .toArray();
 
-		if (currentInterests.length === 0) {
-			return res.json([]);
-		}
+    const matches = candidates
+      .map((candidate) => {
+        const sharedInterestTags = getUserInterests(candidate).filter((interest) =>
+          currentInterests.includes(interest),
+        );
 
-		const candidates = await usersCollection
-			.find({
-				_id: { $ne: currentUser._id },
-				$or: [
-					{ interests: { $in: currentInterests } },
-					{ interestTags: { $in: currentInterests } },
-				],
-			})
-			.limit(20)
-			.toArray();
+        return {
+          id: candidate._id?.toString() || candidate.id,
+          _id: candidate._id,
+          name: candidate.name,
+          major: candidate.major,
+          year: candidate.year,
+          sharedInterestTags,
+          sharedInterests: sharedInterestTags,
+        };
+      })
+      .filter((candidate) => candidate.sharedInterestTags.length > 0)
+      .sort((a, b) => b.sharedInterestTags.length - a.sharedInterestTags.length)
+      .slice(0, 5);
 
-		const matches = candidates
-			.map((candidate) => {
-				const sharedInterestTags = normalizeInterests(candidate).filter((interest) =>
-					currentInterests.includes(interest)
-				);
-
-				return {
-					id: candidate._id?.toString(),
-					_id: candidate._id,
-					name: candidate.name,
-					major: candidate.major,
-					year: candidate.year,
-					sharedInterestTags,
-					sharedInterests: sharedInterestTags,
-				};
-			})
-			.filter((candidate) => candidate.sharedInterestTags.length > 0)
-			.sort((a, b) => b.sharedInterestTags.length - a.sharedInterestTags.length)
-			.slice(0, 5);
-
-		return res.json(matches);
-	} catch (error) {
-		console.error("Error fetching matches:", error);
-		return res.status(500).json({ error: "Failed to fetch matches" });
-	}
+    return res.json(matches);
+  } catch (error) {
+    console.error("Error fetching matches:", error);
+    return res.status(500).json({ error: "Failed to fetch matches" });
+  }
 });
 
 router.post("/interests", async (req, res) => {
-	const userId = res.locals.authSession?.user?.id;
-	const email = res.locals.authSession?.user?.email;
-	const { interests = [] } = req.body ?? {};
+  const sessionUser = res.locals.authSession?.user;
+  const userId = sessionUser?.id;
 
-	if (!userId && !email) {
-		return res.status(401).json({ error: "Unauthorized" });
-	}
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-	if (!Array.isArray(interests)) {
-		return res.status(400).json({ error: "Interests must be an array" });
-	}
+  const normalizedInterests = normalizeInterests(req.body?.interests);
 
-	const normalizedInterests = [...new Set(interests.filter(Boolean))];
-	const filter =
-		userId && ObjectId.isValid(userId)
-			? { _id: new ObjectId(userId) }
-			: { email };
+  if (normalizedInterests.length === 0) {
+    return res.status(400).json({ error: "At least one interest is required" });
+  }
 
-	await usersCollection.updateOne(
-		filter,
-		{
-			$set: {
-				interests: normalizedInterests,
-				interestTags: normalizedInterests,
-				updatedAt: new Date(),
-			},
-			$setOnInsert: {
-				email,
-				createdAt: new Date(),
-			},
-		},
-		{ upsert: true },
-	);
+  try {
+    let user = await findUserForSession(sessionUser);
+    if (!user) {
+      if (!sessionUser?.email) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-	return res.json({ interests: normalizedInterests });
+      const now = new Date();
+      const result = await usersCollection.insertOne({
+        id: userId,
+        email: sessionUser.email,
+        name: sessionUser.name ?? sessionUser.email,
+        interests: normalizedInterests,
+        interestTags: normalizedInterests,
+        onboardingCompletedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return res.json({
+        message: "Interests saved successfully",
+        interests: normalizedInterests,
+        needsOnboarding: false,
+        id: result.insertedId.toString(),
+      });
+    }
+
+    const now = new Date();
+
+    await usersCollection.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          interests: normalizedInterests,
+          interestTags: normalizedInterests,
+          onboardingCompletedAt: now,
+          updatedAt: now,
+        },
+      },
+    );
+
+    return res.json({
+      message: "Interests saved successfully",
+      interests: normalizedInterests,
+      needsOnboarding: false,
+    });
+  } catch (error) {
+    console.error("Error saving user interests:", error);
+    return res.status(500).json({ error: "Failed to save interests" });
+  }
 });
 
-// Get user profile by ID
 router.get("/:id", async (req, res) => {
-	const { id } = req.params;
+  const { id } = req.params;
 
-	try {
-		let user;
+  try {
+    let user;
 
-		if (ObjectId.isValid(id)) {
-			user = await usersCollection.findOne({ _id: new ObjectId(id) });
-		}
+    if (ObjectId.isValid(id)) {
+      user = await usersCollection.findOne({ _id: new ObjectId(id) });
+    }
 
-		if (!user) {
-			user = await usersCollection.findOne({ id });
-		}
+    if (!user) {
+      user = await usersCollection.findOne({ id });
+    }
 
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-		let profile = null;
-		if (user._id || user.id) {
-			const userId = user._id?.toString() || user.id;
-			profile = await profilesCollection.findOne({ userId });
-		}
+    let profile = null;
+    if (user._id || user.id) {
+      const profileUserId = user._id?.toString() || user.id;
+      profile = await profilesCollection.findOne({ userId: profileUserId });
+    }
 
-		res.json({
-			id: user._id?.toString() || user.id,
-			_id: user._id,
-			name: user.name,
-			email: user.email,
-			major: profile?.major,
-			year: profile?.year,
-			bio: user.bio,
-			avatar: user.avatar,
-			interestTags: user.interestTags || user.interests || [],
-			createdAt: user.createdAt,
-		});
-	} catch (error) {
-		console.error("Error fetching user profile:", error);
-		res.status(500).json({ error: "Failed to fetch user profile" });
-	}
+    return res.json({
+      id: user._id?.toString() || user.id,
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      major: profile?.major,
+      year: profile?.year,
+      bio: user.bio,
+      avatar: user.avatar,
+      interestTags: getUserInterests(user),
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return res.status(500).json({ error: "Failed to fetch user profile" });
+  }
 });
 
 router.put("/profile", async (req, res) => {
-	const { major, year } = req.body;
-	const userId = res.locals.authSession?.user?.id;
+  const { major, year } = req.body;
+  const userId = res.locals.authSession?.user?.id;
 
-	if (!userId) {
-		return res.status(401).json({ error: "Unauthorized" });
-	}
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-	if (!major || !year) {
-		return res.status(400).json({ error: "Major and year are required" });
-	}
+  if (!major || !year) {
+    return res.status(400).json({ error: "Major and year are required" });
+  }
 
-	const nextProfile = {
-		userId,
-		major,
-		year,
-		updatedAt: new Date(),
-	};
+  const nextProfile = {
+    userId,
+    major,
+    year,
+    updatedAt: new Date(),
+  };
 
-	await profilesCollection.updateOne(
-		{ userId },
-		{
-			$set: nextProfile,
-			$setOnInsert: {
-				createdAt: new Date(),
-			},
-		},
-		{ upsert: true },
-	);
+  await profilesCollection.updateOne(
+    { userId },
+    {
+      $set: nextProfile,
+      $setOnInsert: {
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
 
-	const savedProfile = await profilesCollection.findOne({ userId }, { projection: { _id: 0 } });
+  const savedProfile = await profilesCollection.findOne({ userId }, { projection: { _id: 0 } });
 
-	res.json({ 
-		message: "Profile updated successfully",
-		profile: savedProfile,
-		user: res.locals.authSession.user,
-	});
+  return res.json({
+    message: "Profile updated successfully",
+    profile: savedProfile,
+    user: res.locals.authSession.user,
+  });
 });
 
 export default router;

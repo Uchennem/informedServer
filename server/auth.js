@@ -27,6 +27,7 @@ export const usersCollection = database.collection("user");
 export const profilesCollection = database.collection("profiles");
 export const groupMembershipsCollection = database.collection("groupMemberships");
 export const savedPostsCollection = database.collection("savedPosts");
+export const postsCollection = database.collection("posts");
 
 export const auth = betterAuth({
   database: mongodbAdapter(database, { client: mongoClient }),

@@ -48,7 +48,8 @@ const authHandler = toNodeHandler(auth);
 app.all("/api/auth/*path", (req, res) => authHandler(req, res));
 app.use("/api/users", requireAuth, userRoutes);
 app.use("/api/groups", requireAuth, groupsRoutes);
-app.use("/api/posts", requireAuth, postsRoutes);
+// requireAuth is applied per-route inside postsRoutes (GET is public, writes are protected)
+app.use("/api/posts", postsRoutes);
 
 // Routes
 app.use("/", routes);

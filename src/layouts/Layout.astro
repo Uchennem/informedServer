@@ -1,7 +1,28 @@
 ---
 import '../styles/global.css';
+import { buildServerApiUrl } from '../lib/api';
 
 const pathname = Astro.url.pathname;
+const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
+
+if (authCookieHeader.includes('better-auth.session_token')) {
+	try {
+		const response = await fetch(buildServerApiUrl('/api/users/me', Astro.url), {
+			headers: {
+				cookie: authCookieHeader,
+			},
+		});
+
+		if (response.ok) {
+			const payload = await response.json();
+			if (payload?.needsOnboarding && pathname !== '/onboarding') {
+				return Astro.redirect('/onboarding');
+			}
+		}
+	} catch {
+		// Do not block rendering if onboarding state lookup fails.
+	}
+}
 
 const navItems = [
 	{ href: '/feed', label: 'Feed', icon: 'feed' },
