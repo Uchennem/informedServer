@@ -4,13 +4,22 @@
   type Props = {
     userId: string;
     mode?: 'view' | 'connect';
+    initialRequested?: boolean;
   };
 
-  let { userId, mode = 'view' }: Props = $props();
+  let { userId, mode = 'view', initialRequested = false }: Props = $props();
   let isPending = $state(false);
   let isSubmitting = $state(false);
   let animating = $state(false);
   let errorMessage = $state('');
+
+  $effect(() => {
+    if (mode !== 'connect' || isSubmitting) {
+      return;
+    }
+
+    isPending = Boolean(initialRequested);
+  });
 
   async function toggleConnectionRequest() {
     if (!userId || isSubmitting) return;

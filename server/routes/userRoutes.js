@@ -77,6 +77,41 @@ function getCanonicalUserId(user, fallbackId = null) {
   return user?._id?.toString() || user?.id || fallbackId;
 }
 
+function normalizeComparableText(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function toConnectionTargetIds(user) {
+  const ids = [user?._id?.toString?.(), user?.id]
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(ids));
+}
+
+async function getRequestedTargetIds(requesterId, targetIds) {
+  const normalizedTargetIds = Array.from(new Set(targetIds.filter(Boolean)));
+
+  if (!requesterId || normalizedTargetIds.length === 0) {
+    return new Set();
+  }
+
+  const pendingRequests = await connectionRequestsCollection
+    .find({
+      requesterId,
+      targetId: { $in: normalizedTargetIds },
+      status: "pending",
+    })
+    .toArray();
+
+  return new Set(
+    pendingRequests
+      .map((request) => request.targetId)
+      .filter((targetId) => typeof targetId === "string" && targetId.trim().length > 0),
+  );
+}
+
 async function findUserByAnyId(id) {
   if (!id) {
     return null;
@@ -171,7 +206,9 @@ router.get("/matches", async (req, res) => {
       return res.json([]);
     }
 
+    const requesterId = getCanonicalUserId(currentUser, sessionUser.id);
     const currentInterests = getUserInterests(currentUser);
+    const currentMajor = normalizeComparableText(currentUser.major);
 
     if (currentInterests.length === 0) {
       return res.json([]);
@@ -188,11 +225,24 @@ router.get("/matches", async (req, res) => {
       .limit(20)
       .toArray();
 
+    const allCandidateConnectionTargetIds = candidates.flatMap((candidate) =>
+      toConnectionTargetIds(candidate),
+    );
+
+    const requestedTargetIds = await getRequestedTargetIds(
+      requesterId,
+      allCandidateConnectionTargetIds,
+    );
+
     const matches = candidates
       .map((candidate) => {
         const sharedInterestTags = getUserInterests(candidate).filter((interest) =>
           currentInterests.includes(interest),
         );
+
+        const candidateMajor = normalizeComparableText(candidate.major);
+        const candidateTargetIds = toConnectionTargetIds(candidate);
+        const isRequested = candidateTargetIds.some((targetId) => requestedTargetIds.has(targetId));
 
         return {
           id: candidate._id?.toString() || candidate.id,
@@ -202,16 +252,112 @@ router.get("/matches", async (req, res) => {
           year: candidate.year,
           sharedInterestTags,
           sharedInterests: sharedInterestTags,
+          isRequested,
+          sameMajor: Boolean(currentMajor && candidateMajor && currentMajor === candidateMajor),
         };
       })
       .filter((candidate) => candidate.sharedInterestTags.length > 0)
-      .sort((a, b) => b.sharedInterestTags.length - a.sharedInterestTags.length)
+      .sort((a, b) => {
+        const interestDelta = b.sharedInterestTags.length - a.sharedInterestTags.length;
+        if (interestDelta !== 0) {
+          return interestDelta;
+        }
+
+        if (a.sameMajor !== b.sameMajor) {
+          return a.sameMajor ? -1 : 1;
+        }
+
+        return String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
+          sensitivity: "base",
+        });
+      })
       .slice(0, 5);
 
-    return res.json(matches);
+    return res.json(matches.map(({ sameMajor, ...candidate }) => candidate));
   } catch (error) {
     console.error("Error fetching matches:", error);
     return res.status(500).json({ error: "Failed to fetch matches" });
+  }
+});
+
+router.get("/search", async (req, res) => {
+  const sessionUser = res.locals.authSession?.user;
+
+  if (!sessionUser) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const query = String(req.query.q ?? "").trim();
+
+  if (query.length < 2) {
+    return res.json([]);
+  }
+
+  try {
+    const currentUser = await findUserForSession(sessionUser);
+    if (!currentUser) {
+      return res.json([]);
+    }
+
+    const requesterId = getCanonicalUserId(currentUser, sessionUser.id);
+    const currentUserObjectId = currentUser?._id;
+    const currentInterests = getUserInterests(currentUser);
+    const currentMajor = normalizeComparableText(currentUser.major);
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escapedQuery, "i");
+
+    const candidates = await usersCollection
+      .find({
+        ...(currentUserObjectId ? { _id: { $ne: currentUserObjectId } } : {}),
+        $or: [{ name: searchRegex }, { major: searchRegex }],
+      })
+      .limit(20)
+      .toArray();
+
+    const allCandidateConnectionTargetIds = candidates.flatMap((candidate) =>
+      toConnectionTargetIds(candidate),
+    );
+
+    const requestedTargetIds = await getRequestedTargetIds(
+      requesterId,
+      allCandidateConnectionTargetIds,
+    );
+
+    const results = candidates
+      .map((candidate) => {
+        const sharedInterestTags = getUserInterests(candidate).filter((interest) =>
+          currentInterests.includes(interest),
+        );
+        const candidateMajor = normalizeComparableText(candidate.major);
+        const candidateTargetIds = toConnectionTargetIds(candidate);
+
+        return {
+          id: candidate._id?.toString() || candidate.id,
+          _id: candidate._id,
+          name: candidate.name,
+          major: candidate.major,
+          year: candidate.year,
+          sharedInterestTags,
+          sharedInterests: sharedInterestTags,
+          isRequested: candidateTargetIds.some((targetId) => requestedTargetIds.has(targetId)),
+          sameMajor: Boolean(currentMajor && candidateMajor && currentMajor === candidateMajor),
+        };
+      })
+      .filter((candidate) => candidate.id !== requesterId)
+      .sort((a, b) => {
+        if (a.sameMajor !== b.sameMajor) {
+          return a.sameMajor ? -1 : 1;
+        }
+
+        return String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
+          sensitivity: "base",
+        });
+      });
+
+    return res.json(results.map(({ sameMajor, ...candidate }) => candidate));
+  } catch (error) {
+    console.error("Error searching users:", error);
+    return res.status(500).json({ error: "Failed to search users" });
   }
 });
 
@@ -297,12 +443,9 @@ router.post("/:id/connect", async (req, res) => {
     }
 
     const targetUser = await findUserByAnyId(targetParamId);
-    if (!targetUser) {
-      return res.status(404).json({ error: "Target user not found" });
-    }
 
     const requesterId = getCanonicalUserId(requesterUser, requesterSessionId);
-    const targetId = getCanonicalUserId(targetUser);
+    const targetId = getCanonicalUserId(targetUser, targetParamId);
 
     if (!requesterId || !targetId) {
       return res.status(400).json({ error: "Invalid connection request" });
@@ -353,12 +496,9 @@ router.delete("/:id/connect", async (req, res) => {
     }
 
     const targetUser = await findUserByAnyId(targetParamId);
-    if (!targetUser) {
-      return res.status(404).json({ error: "Target user not found" });
-    }
 
     const requesterId = getCanonicalUserId(requesterUser, requesterSessionId);
-    const targetId = getCanonicalUserId(targetUser);
+    const targetId = getCanonicalUserId(targetUser, targetParamId);
 
     if (!requesterId || !targetId) {
       return res.status(400).json({ error: "Invalid connection request" });

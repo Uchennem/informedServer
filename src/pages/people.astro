@@ -11,6 +11,7 @@ type MatchUser = {
   year?: string | number;
   sharedInterestTags?: string[];
   sharedInterests?: string[];
+  isRequested?: boolean;
 };
 
 const request = Astro.request;
@@ -21,9 +22,13 @@ if (!authCookieHeader.includes('better-auth.session_token')) {
 }
 
 let matches: MatchUser[] = [];
+const searchQuery = Astro.url.searchParams.get('q')?.trim() ?? '';
+const endpoint = searchQuery.length >= 2
+  ? buildServerApiUrl(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, Astro.url)
+  : buildServerApiUrl('/api/users/matches', Astro.url);
 
 try {
-  const response = await fetch(buildServerApiUrl('/api/users/matches', Astro.url), {
+  const response = await fetch(endpoint, {
     headers: {
       cookie: authCookieHeader,
     },
@@ -59,8 +64,10 @@ try {
             placeholder="Search by name or major..."
             class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl"
             id="peopleSearch"
+            value={searchQuery}
           />
         </div>
+        <p id="peopleSearchStatus" class="text-xs text-nc-text-subtle mt-2 hidden"></p>
       </div>
 
       {/* People Grid */}
@@ -72,7 +79,7 @@ try {
             const sharedInterestsCount = interestTags.length;
 
             return (
-              <article class="card group stagger-item relative overflow-hidden transition-all duration-300 hover:-translate-y-1 p-5">
+              <article class="card group stagger-item relative overflow-hidden transition-all duration-300 hover:-translate-y-1 p-5 js-person-card" data-name={String(match.name ?? '').toLowerCase()} data-major={String(match.major ?? '').toLowerCase()}>
                 {/* Accent bar */}
                 <div class="absolute top-0 left-0 right-0 h-[3px] bg-nc-accent-primary"></div>
 
@@ -113,7 +120,7 @@ try {
 
                 {/* Connect Button */}
                 <div class="pt-3 border-t border-nc-border-subtle/50">
-                  <ConnectButton client:load userId={userId} mode="connect" />
+                  <ConnectButton client:load userId={userId} mode="connect" initialRequested={Boolean(match.isRequested)} />
                 </div>
               </article>
             );
@@ -132,3 +139,94 @@ try {
     </div>
   </main>
 </Layout>
+
+<script>
+  const searchInput = document.getElementById('peopleSearch') as HTMLInputElement | null;
+  const statusLine = document.getElementById('peopleSearchStatus') as HTMLElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.js-person-card'));
+  const queryParam = new URLSearchParams(window.location.search).get('q')?.trim() ?? '';
+
+  if (searchInput && cards.length > 0) {
+    let searchTimer: number | undefined;
+
+    const setStatus = (message = '') => {
+      if (!statusLine) return;
+      statusLine.textContent = message;
+      statusLine.classList.toggle('hidden', !message);
+    };
+
+    const applyLocalFilter = (value: string): number => {
+      const query = value.trim().toLowerCase();
+
+      if (!query) {
+        cards.forEach((card) => {
+          card.style.display = '';
+        });
+        setStatus('');
+        return cards.length;
+      }
+
+      let visibleCount = 0;
+      cards.forEach((card) => {
+        const name = card.getAttribute('data-name') || '';
+        const major = card.getAttribute('data-major') || '';
+        const matches = name.includes(query) || major.includes(query);
+        card.style.display = matches ? '' : 'none';
+        if (matches) {
+          visibleCount += 1;
+        }
+      });
+
+      if (visibleCount === 0 && query.length >= 2) {
+        setStatus('Searching all students...');
+      } else if (visibleCount === 0) {
+        setStatus('No local matches yet. Type at least 2 characters to search all students.');
+      } else {
+        setStatus('');
+      }
+
+      return visibleCount;
+    };
+
+    const runSearch = (value: string): void => {
+      const query = value.trim();
+      const visibleCount = applyLocalFilter(query);
+
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        if (!query && queryParam) {
+          window.location.href = '/people';
+          return;
+        }
+
+        if (query.length >= 2 && visibleCount === 0 && query !== queryParam) {
+          window.location.href = `/people?q=${encodeURIComponent(query)}`;
+        }
+      }, 300);
+    };
+
+    searchInput.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) {
+        return;
+      }
+
+      runSearch(target.value);
+    });
+
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      event.preventDefault();
+      const query = searchInput.value.trim();
+
+      if (query.length >= 2 && query !== queryParam) {
+        window.location.href = `/people?q=${encodeURIComponent(query)}`;
+      }
+    });
+
+    runSearch(searchInput.value);
+  }
+</script>
