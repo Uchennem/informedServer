@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { postsCollection, savedPostsCollection } from "../auth.js";
+import { postsCollection, savedPostsCollection, commentsCollection } from "../auth.js";
 import requireAuth from "../middleware/requireAuth.js";
 
 const router = Router();
@@ -20,7 +20,10 @@ function serializePost(post) {
     author: post.author ?? post.authorName ?? "Unknown",
     description: post.description ?? post.body ?? "",
     rsvpCount: Array.isArray(post.rsvps) ? post.rsvps.length : post.rsvpCount ?? 0,
-    date: post.date ?? createdAt.toISOString(),
+    date: post.eventDate
+      ? new Date(post.eventDate).toISOString()
+      : (post.date ?? createdAt.toISOString()),
+    location: post.location ?? '',
   };
 }
 
@@ -118,7 +121,7 @@ router.post("/:id/save", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { title, body, category } = req.body;
+    const { title, body, category, eventDate, location, maxAttendees } = req.body;
 
     if (!title || !body || !category) {
       return res.status(400).json({ error: "title, body, and category are required" });
@@ -142,6 +145,9 @@ router.post("/", requireAuth, async (req, res) => {
       authorName: user.name ?? "Unknown",
       author: user.name ?? "Unknown",
       rsvps: [],
+      eventDate: eventDate ? new Date(eventDate) : now,
+      location: typeof location === 'string' ? location.trim() : '',
+      maxAttendees: Number(maxAttendees) || 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -268,6 +274,59 @@ router.delete("/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("[DELETE /api/posts/:id]", error);
     return res.status(500).json({ error: "Failed to delete post" });
+  }
+});
+
+router.get("/:id/comments", async (req, res) => {
+  const { id } = req.params;
+  if (!ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid post id" });
+  try {
+    const comments = await commentsCollection
+      .find({ postId: id })
+      .sort({ createdAt: 1 })
+      .toArray();
+    return res.json(comments.map(c => ({
+      id: c._id.toString(),
+      postId: c.postId,
+      authorId: c.authorId,
+      authorName: c.authorName,
+      body: c.body,
+      createdAt: c.createdAt,
+    })));
+  } catch (error) {
+    console.error("[GET /api/posts/:id/comments]", error);
+    return res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
+router.post("/:id/comments", requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { body } = req.body;
+  if (!ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid post id" });
+  if (!body?.trim()) return res.status(400).json({ error: "Comment body is required" });
+  if (body.length > 1000) return res.status(400).json({ error: "Comment too long" });
+  const sessionUser = res.locals.authSession?.user;
+  const now = new Date();
+  try {
+    const result = await commentsCollection.insertOne({
+      postId: id,
+      authorId: sessionUser.id,
+      authorName: sessionUser.name ?? "Anonymous",
+      body: body.trim(),
+      createdAt: now,
+      updatedAt: now,
+    });
+    return res.status(201).json({
+      id: result.insertedId.toString(),
+      postId: id,
+      authorId: sessionUser.id,
+      authorName: sessionUser.name ?? "Anonymous",
+      body: body.trim(),
+      createdAt: now,
+    });
+  } catch (error) {
+    console.error("[POST /api/posts/:id/comments]", error);
+    return res.status(500).json({ error: "Failed to post comment" });
   }
 });
 

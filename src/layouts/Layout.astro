@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { buildServerApiUrl } from '../lib/api';
+import CommandPalette from '../components/CommandPalette.svelte';
 
 const pathname = Astro.url.pathname;
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
@@ -51,40 +52,50 @@ const isActive = (href: string): boolean => {
 
 		<!-- SEO -->
 		<title>Informed — Find Your People & Events on Campus</title>
-		<meta name="description" content="Informed brings student events, clubs, and connections into one modern place. Discover what's happening on campus tonight." />
+		<meta name="description" content="Informed brings student events, clubs, and connections into one brutalistic place. Discover what's happening on campus tonight." />
 		<meta property="og:title" content="Informed — Your Campus, Connected" />
 		<meta property="og:description" content="Discover events, join groups, and connect with students who share your interests." />
-		<meta name="theme-color" content="#111113" />
+		<meta name="theme-color" content="#0a0a0a" />
 
 		<!-- Font preloads -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-		<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
-		<link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 	</head>
 	<body>
-		<div class="min-h-screen text-nc-text-primary">
+		<div class="min-h-screen flex">
 			<!-- Desktop Sidebar -->
-			<aside class="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:border-r md:border-nc-border-subtle/80 md:bg-nc-bg-elevated/85 md:backdrop-blur-xl">
-				<div class="px-5 py-7 border-b border-nc-border-subtle/60">
-					<a href="/" class="text-2xl font-display font-bold tracking-wide text-nc-text-primary hover:text-nc-accent-primary transition-colors">Informed</a>
-					<p class="mt-1 text-xs uppercase tracking-[0.16em] text-nc-text-subtle">Your campus, connected</p>
+			<aside class="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:border-r-[4px] md:border-nc-border-subtle md:bg-nc-bg-root z-40">
+				<div class="px-5 py-7 border-b-[4px] border-nc-border-subtle">
+					<a href="/" class="text-4xl font-display font-black tracking-tighter text-nc-text-primary hover:text-nc-accent-primary transition-colors uppercase" style="text-shadow: 2px 2px 0px #333;">Informed</a>
+					<p class="mt-3 text-xs font-sans font-bold uppercase tracking-[0.2em] text-nc-accent-primary bg-[#000] inline-block px-2 py-1 border border-nc-border-subtle">Your campus, connected</p>
+
+					<!-- Command Palette Trigger -->
+					<button
+						type="button"
+						id="cmdKHint"
+						class="mt-4 w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold uppercase font-sans text-nc-text-subtle bg-nc-bg-elevated border-2 border-nc-border-subtle shadow-[2px_2px_0px_0px_var(--nc-border-subtle)] hover:border-nc-accent-primary hover:text-nc-accent-primary hover:shadow-[4px_4px_0px_0px_var(--nc-accent-primary)] hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all duration-150"
+					>
+						<span class="flex items-center gap-2">
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+							Search & Commands
+						</span>
+						<kbd class="font-mono text-[9px] bg-[#000] border border-nc-border-subtle px-1.5 py-0.5">⌘K</kbd>
+					</button>
 				</div>
-				<nav class="flex-1 px-3 py-5">
-					<ul class="space-y-1.5">
+				<nav class="flex-1 px-4 py-6">
+					<ul class="space-y-3">
 						{navItems.map((item) => (
 							<li>
 								<a
 									href={item.href}
-									class={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+									class={`group flex items-center gap-3 px-4 py-3 text-sm font-bold uppercase font-sans tracking-wide transition-all duration-150 border-[2px] ${
 										isActive(item.href)
-											? 'bg-nc-accent-primary text-white'
-											: 'text-nc-text-muted hover:bg-nc-bg-card hover:text-nc-text-primary'
+											? 'bg-nc-accent-primary text-black border-black shadow-[4px_4px_0px_0px_#FF3E00] -translate-y-1 -translate-x-1'
+											: 'bg-nc-bg-elevated text-nc-text-primary border-nc-border-subtle shadow-[2px_2px_0px_0px_var(--nc-border-subtle)] hover:bg-nc-text-primary hover:text-black hover:border-black hover:shadow-[4px_4px_0px_0px_var(--nc-accent-primary)] hover:-translate-y-1 hover:-translate-x-1'
 									}`}
 								>
-									<span aria-hidden="true" class={`h-5 w-5 ${isActive(item.href) ? 'text-white' : 'text-nc-text-subtle group-hover:text-nc-accent-primary transition-colors'}`}>
+									<span aria-hidden="true" class={`h-5 w-5 ${isActive(item.href) ? 'text-black' : 'text-nc-text-subtle group-hover:text-black transition-colors'}`}>
 										{item.icon === 'feed' && (
 											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 3.5a1 1 0 011-1h13a1 1 0 011 1v13a1 1 0 01-1 1h-13a1 1 0 01-1-1v-13zm3 2a1 1 0 000 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h9a1 1 0 100-2h-9zm0 4a1 1 0 100 2h5a1 1 0 100-2h-5z"/></svg>
 										)}
@@ -101,7 +112,7 @@ const isActive = (href: string): boolean => {
 											<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10.5A3.75 3.75 0 1010 3a3.75 3.75 0 000 7.5zM3 16.25C3 13.9 4.9 12 7.25 12h5.5C15.1 12 17 13.9 17 16.25V17H3v-.75z"/></svg>
 										)}
 									</span>
-									<span>{item.label}</span>
+									<span class="mt-0.5">{item.label}</span>
 								</a>
 							</li>
 						))}
@@ -109,11 +120,11 @@ const isActive = (href: string): boolean => {
 				</nav>
 
 				<!-- Logout -->
-				<div class="px-3 pb-5 mt-auto border-t border-nc-border-subtle/60 pt-4">
+				<div class="px-4 pb-6 mt-auto border-t-[4px] border-nc-border-subtle pt-6">
 					<button
 						type="button"
 						id="logoutBtn"
-						class="group flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-medium text-nc-text-subtle hover:bg-nc-destructive/8 hover:text-nc-destructive transition-all duration-200"
+						class="group flex w-full items-center gap-3 px-4 py-3 text-xs font-bold uppercase font-sans text-nc-text-primary bg-nc-bg-elevated border-2 border-nc-border-subtle shadow-[2px_2px_0px_0px_var(--nc-border-subtle)] hover:bg-nc-destructive hover:text-black hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:-translate-x-1 transition-all duration-150"
 					>
 						<span aria-hidden="true" class="h-4 w-4">
 							<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd"/></svg>
@@ -121,19 +132,32 @@ const isActive = (href: string): boolean => {
 						<span>Sign Out</span>
 					</button>
 				</div>
+
 			</aside>
 
-			<div class="md:pl-64">
+			<div class="md:pl-64 flex flex-col min-h-screen w-full">
+				<!-- Ticker Marquee -->
+				<div class="w-full bg-nc-accent-primary border-b-[4px] border-black flex items-center h-8 relative z-30" style="overflow-x: hidden; white-space: nowrap;">
+					<div class="animate-marquee whitespace-nowrap flex text-black font-sans font-bold uppercase tracking-widest text-[10px]" style="min-width: 200%;">
+						{Array.from({ length: 12 }).map(() => (
+							<span class="inline-block px-4">✦ WARNING ✦ HIGH ACTIVITY DETECTED TONIGHT ✦ CHECK FEED ✦ RSVP </span>
+						))}
+					</div>
+				</div>
+
 				<!-- Mobile Top Bar -->
-				<header class="sticky top-0 z-20 border-b border-nc-border-subtle/70 bg-nc-bg-root/95 backdrop-blur md:hidden">
+				<header class="sticky top-0 z-20 border-b-[4px] border-nc-border-subtle bg-nc-bg-root md:hidden">
 					<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-						<h1 class="text-base font-display font-bold tracking-wide text-nc-text-primary">Informed</h1>
-						<div class="flex items-center gap-3">
-							<a href="/notifications" class="relative text-nc-text-subtle hover:text-nc-accent-primary transition-colors" aria-label="Notifications">
-								<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z"/></svg>
-								<span class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-nc-destructive border-2 border-nc-bg-root"></span>
+						<h1 class="text-2xl font-display font-black tracking-tighter text-nc-text-primary uppercase" style="text-shadow: 2px 2px 0px #333; margin-bottom: 0;">Informed</h1>
+						<div class="flex items-center gap-4">
+							<button type="button" id="cmdKHintMobile" class="text-nc-text-primary hover:text-nc-accent-primary transition-colors" aria-label="Search & Commands">
+								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+							</button>
+							<a href="/notifications" class="relative text-nc-text-primary hover:text-nc-accent-primary transition-colors" aria-label="Notifications">
+								<svg class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z"/></svg>
+								<span class="absolute -top-1 -right-1 h-3 w-3 rounded-none bg-nc-destructive border-2 border-black"></span>
 							</a>
-							<a href="/profile/me" class="h-8 w-8 rounded-full bg-gradient-to-br from-nc-accent-primary to-nc-accent-secondary flex items-center justify-center text-[10px] font-bold text-white">ME</a>
+							<a href="/profile/me" class="h-9 w-9 rounded-none bg-nc-accent-primary border-2 border-black shadow-[2px_2px_0px_0px_#FF3E00] flex items-center justify-center text-[10px] font-black text-black">ME</a>
 						</div>
 					</div>
 				</header>
@@ -142,14 +166,14 @@ const isActive = (href: string): boolean => {
 			</div>
 
 			<!-- Mobile Bottom Nav -->
-			<nav class="fixed inset-x-0 bottom-0 z-30 border-t border-nc-border-subtle/70 bg-nc-bg-root/95 backdrop-blur md:hidden">
-				<ul class="grid grid-cols-5">
+			<nav class="fixed inset-x-0 bottom-0 z-30 border-t-[4px] border-nc-border-subtle bg-nc-bg-root md:hidden">
+				<ul class="flex w-full">
 					{navItems.map((item) => (
-						<li>
+						<li class="flex-1">
 							<a
 								href={item.href}
-								class={`flex flex-col items-center gap-1 px-2 py-2.5 text-[11px] font-semibold transition-all duration-200 ${
-									isActive(item.href) ? 'text-nc-accent-primary' : 'text-nc-text-subtle hover:text-nc-text-primary'
+								class={`flex flex-col items-center justify-center gap-1.5 h-[64px] border-r-2 border-nc-border-subtle last:border-r-0 transition-all duration-150 ${
+									isActive(item.href) ? 'bg-nc-accent-primary text-black shadow-[inset_0px_4px_0px_0px_#FF3E00]' : 'text-nc-text-subtle hover:bg-nc-bg-elevated hover:text-nc-text-primary'
 								}`}
 							>
 								<span aria-hidden="true" class="h-5 w-5">
@@ -169,13 +193,15 @@ const isActive = (href: string): boolean => {
 										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10.5A3.75 3.75 0 1010 3a3.75 3.75 0 000 7.5zM3 16.25C3 13.9 4.9 12 7.25 12h5.5C15.1 12 17 13.9 17 16.25V17H3v-.75z"/></svg>
 									)}
 								</span>
-								<span>{item.label}</span>
+								<span class="text-[10px] font-sans font-bold uppercase tracking-wider">{item.label}</span>
 							</a>
 						</li>
 					))}
 				</ul>
 			</nav>
 		</div>
+
+		<CommandPalette client:only="svelte" />
 
 		<script>
 			const logoutBtn = document.getElementById('logoutBtn');
@@ -192,6 +218,13 @@ const isActive = (href: string): boolean => {
 					window.location.href = '/login';
 				});
 			}
+
+			// Cmd+K hint buttons (desktop sidebar + mobile header)
+			document.querySelectorAll('#cmdKHint, #cmdKHintMobile').forEach(btn => {
+				btn.addEventListener('click', () => {
+					window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+				});
+			});
 		</script>
 	</body>
 </html>

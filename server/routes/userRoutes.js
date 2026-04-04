@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { appDatabase, profilesCollection, usersCollection } from "../auth.js";
+import { appDatabase, profilesCollection, usersCollection, notificationsCollection } from "../auth.js";
 import { ObjectId } from "mongodb";
 
 const router = Router();
@@ -473,6 +473,17 @@ router.post("/:id/connect", async (req, res) => {
       { upsert: true },
     );
 
+    await notificationsCollection.insertOne({
+      recipientId: targetId,
+      senderId: requesterId,
+      senderName: requesterUser?.name ?? "Someone",
+      type: "connection_request",
+      refId: requesterId,
+      read: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     return res.json({ requested: true });
   } catch (error) {
     console.error("Error creating connection request:", error);
@@ -510,6 +521,55 @@ router.delete("/:id/connect", async (req, res) => {
   } catch (error) {
     console.error("Error deleting connection request:", error);
     return res.status(500).json({ error: "Failed to delete connection request" });
+  }
+});
+
+router.patch("/:id/connect", async (req, res) => {
+  const { action } = req.body; // "accept" | "decline"
+  const sessionUser = res.locals.authSession?.user;
+  const requesterId = req.params.id;
+
+  if (!sessionUser) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const currentUser = await findUserForSession(sessionUser);
+    const currentUserId = getCanonicalUserId(currentUser, sessionUser?.id);
+
+    const request = await connectionRequestsCollection.findOne({
+      requesterId,
+      targetId: currentUserId,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+
+    if (action === "accept") {
+      await connectionRequestsCollection.updateOne(
+        { _id: request._id },
+        { $set: { status: "accepted", updatedAt: new Date() } },
+      );
+      await notificationsCollection.insertOne({
+        recipientId: requesterId,
+        senderId: currentUserId,
+        senderName: currentUser?.name ?? "Someone",
+        type: "connection_accepted",
+        refId: currentUserId,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      return res.json({ status: "accepted" });
+    } else {
+      await connectionRequestsCollection.deleteOne({ _id: request._id });
+      return res.json({ status: "declined" });
+    }
+  } catch (error) {
+    console.error("Error handling connection action:", error);
+    return res.status(500).json({ error: "Failed to process connection action" });
   }
 });
 

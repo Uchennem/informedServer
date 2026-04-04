@@ -8,6 +8,7 @@ import groupsRoutes from "./routes/groupsRoutes.js";
 import postsRoutes from "./routes/postsRoutes.js";
 import routes from "./routes/index.js";
 import userRoutes from "./routes/userRoutes.js";
+import notificationsRoutes from "./routes/notifications.js";
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use("/api/users", requireAuth, userRoutes);
 app.use("/api/groups", requireAuth, groupsRoutes);
 // requireAuth is applied per-route inside postsRoutes (GET is public, writes are protected)
 app.use("/api/posts", postsRoutes);
+app.use("/api/notifications", requireAuth, notificationsRoutes);
 
 // Routes
 app.use("/", routes);

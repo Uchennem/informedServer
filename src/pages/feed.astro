@@ -81,7 +81,7 @@ try {
     <div class="max-w-3xl mx-auto px-4 py-5 sm:py-6 md:py-8">
       <div class="section-header mb-8">
         <span class="section-eyebrow">Tonight on campus</span>
-        <h1>Discover Events</h1>
+        <h1 id="kineticTitle" class="kinetic-text" style="text-shadow: 6px 6px 0px #FF3E00;">Discover Events</h1>
         <p class="section-subtitle">Find and RSVP to campus events that match your interests.</p>
       </div>
 
@@ -130,15 +130,15 @@ try {
         <CreatePostForm client:load />
       </div>
 
-      <div class="space-y-4 stagger-container" id="postsContainer">
+      <div class="columns-1 md:columns-2 gap-6 stagger-container" id="postsContainer">
         {
           posts.length > 0 ? (
             posts.map((post, index) => (
-              <>
+              <div class="mb-6 break-inside-avoid inline-block w-full align-top">
                 <PostCard post={post} />
 
                 {index === 2 && matches.length > 0 && (
-                  <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCard">
+                  <div class="card p-5 relative overflow-hidden mt-6" id="peopleSuggestionCard">
                     <button
                       type="button"
                       id="dismissPeopleCard"
@@ -177,7 +177,7 @@ try {
                     <a href="/people" class="block text-center text-xs text-nc-accent-primary font-semibold mt-3 hover:text-nc-accent-secondary transition-colors">See all people →</a>
                   </div>
                 )}
-              </>
+              </div>
             ))
           ) : (
             <div class="card text-center py-12 px-6">
@@ -199,7 +199,8 @@ try {
         }
 
         {posts.length > 0 && posts.length < 3 && matches.length > 0 && (
-          <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCardAlt">
+          <div class="mb-6 break-inside-avoid inline-block w-full align-top">
+            <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCardAlt">
             <button
               type="button"
               class="dismiss-people-btn absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-nc-text-subtle hover:text-nc-text-primary hover:bg-nc-bg-elevated transition-all"
@@ -236,6 +237,7 @@ try {
 
             <a href="/people" class="block text-center text-xs text-nc-accent-primary font-semibold mt-3 hover:text-nc-accent-secondary transition-colors">See all people →</a>
           </div>
+          </div>
         )}
       </div>
     </div>
@@ -257,6 +259,13 @@ try {
     window.location.reload();
   });
 
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('[data-comments-toggle]');
+    if (!btn) return;
+    const postId = (btn as HTMLElement).dataset.commentsToggle;
+    document.getElementById(`comments-${postId}`)?.classList.toggle('hidden');
+  });
+
   document.querySelectorAll('#dismissPeopleCard, .dismiss-people-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const card = btn.closest('.card');
@@ -275,4 +284,36 @@ try {
       }
     });
   });
+
+  // Kinetic Typography: mouse-tracking 3D text-shadow
+  const kineticTitle = document.getElementById('kineticTitle');
+  if (kineticTitle) {
+    let rafId: number;
+    const maxOffset = 12;
+    document.addEventListener('mousemove', (e) => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const rect = kineticTitle.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // Calculate distance from center of the title
+        const dx = (e.clientX - centerX) / window.innerWidth;
+        const dy = (e.clientY - centerY) / window.innerHeight;
+
+        // Invert: shadow moves opposite to cursor
+        const shadowX = Math.round(-dx * maxOffset * 2);
+        const shadowY = Math.round(-dy * maxOffset * 2);
+
+        kineticTitle.style.textShadow = `${shadowX}px ${shadowY}px 0px #FF3E00`;
+      });
+    });
+  }
 </script>
+
+<style>
+  .kinetic-text {
+    transition: text-shadow 80ms ease-out;
+    cursor: crosshair;
+  }
+</style>

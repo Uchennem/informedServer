@@ -1,0 +1,98 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NotificationItem from '../components/NotificationItem.svelte';
+import { buildServerApiUrl } from '../lib/api';
+
+const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
+
+if (!authCookieHeader.includes('better-auth.session_token')) {
+  return Astro.redirect('/login');
+}
+
+type Notification = {
+  id: string;
+  type: string;
+  senderId: string;
+  senderName: string;
+  read: boolean;
+  createdAt: string;
+};
+
+let notifications: Notification[] = [];
+
+try {
+  const response = await fetch(buildServerApiUrl('/api/notifications', Astro.url), {
+    headers: { cookie: authCookieHeader },
+  });
+  if (response.ok) {
+    const data = await response.json();
+    notifications = Array.isArray(data) ? data : [];
+  }
+} catch {
+  notifications = [];
+}
+
+const unreadCount = notifications.filter(n => !n.read).length;
+---
+
+<Layout>
+  <main class="min-h-screen pb-20 md:pb-8">
+    <div class="max-w-2xl mx-auto px-4 py-5 sm:py-6 md:py-8">
+      <div class="section-header mb-8">
+        <span class="section-eyebrow">Activity</span>
+        <h1>Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}</h1>
+        <p class="section-subtitle">Connection requests and updates from your campus network.</p>
+      </div>
+
+      {unreadCount > 0 && (
+        <div class="mb-4 flex justify-end">
+          <button
+            type="button"
+            id="markAllReadBtn"
+            class="text-xs font-bold uppercase tracking-wider text-nc-text-subtle hover:text-nc-accent-primary transition-colors border border-nc-border-subtle px-3 py-1.5 hover:border-nc-accent-primary"
+          >
+            Mark all read
+          </button>
+        </div>
+      )}
+
+      {notifications.length > 0 ? (
+        <div class="space-y-2">
+          {notifications.map(n => (
+            <NotificationItem
+              client:load
+              id={n.id}
+              type={n.type}
+              senderName={n.senderName}
+              senderId={n.senderId}
+              read={n.read}
+              createdAt={n.createdAt}
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="card py-12 px-6 text-center">
+          <svg class="w-10 h-10 mx-auto text-nc-text-subtle mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <p class="text-nc-text-primary font-semibold mb-1">All caught up</p>
+          <p class="text-sm text-nc-text-muted">No notifications yet. Connect with people to get started.</p>
+        </div>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const markAllBtn = document.getElementById('markAllReadBtn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', async () => {
+      const baseUrl = (window as any).__PUBLIC_API_BASE_URL || '';
+      await fetch(`${baseUrl}/api/notifications/read-all`, {
+        method: 'PATCH',
+        credentials: 'include',
+      }).catch(() => {});
+      window.location.reload();
+    });
+  }
+</script>
