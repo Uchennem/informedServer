@@ -204,29 +204,15 @@ togglePasswordBtn.addEventListener('click', (e: MouseEvent): void => {
   const isPassword = passwordInput.type === 'password';
   passwordInput.type = isPassword ? 'text' : 'password';
 
-  const toggleIcon = document.getElementById('toggleIcon') as HTMLImageElement | null;
-  if (!toggleIcon) {
-    console.error('Toggle icon element not found');
+  const eyeOpenIcon = document.getElementById('eyeOpenIcon');
+  const eyeClosedIcon = document.getElementById('eyeClosedIcon');
+
+  if (!(eyeOpenIcon instanceof HTMLElement) || !(eyeClosedIcon instanceof HTMLElement)) {
     return;
   }
 
-  const eyeIconUrl = togglePasswordBtn.dataset.eyeIcon;
-  const eyeSlashIconUrl = togglePasswordBtn.dataset.eyeSlashIcon;
-
-  if (!eyeIconUrl || !eyeSlashIconUrl) {
-    console.error('Missing icon URLs in data attributes');
-    return;
-  }
-
-  if (isPassword) {
-    // Switching to text - show eye-slash icon
-    toggleIcon.src = eyeSlashIconUrl;
-    toggleIcon.alt = 'Hide password';
-  } else {
-    // Switching to password - show eye icon
-    toggleIcon.src = eyeIconUrl;
-    toggleIcon.alt = 'Show password';
-  }
+  eyeOpenIcon.classList.toggle('hidden', !isPassword);
+  eyeClosedIcon.classList.toggle('hidden', isPassword);
 });
 
 /**

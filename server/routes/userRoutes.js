@@ -74,7 +74,53 @@ async function findUserForSession(sessionUser) {
 }
 
 function getCanonicalUserId(user, fallbackId = null) {
-  return user?._id?.toString() || user?.id || fallbackId;
+  return user?.id || user?._id?.toString() || fallbackId;
+}
+
+function getProfileCandidateIds(user, fallbackId = null) {
+  const ids = [user?.id, user?._id?.toString?.(), fallbackId]
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(ids));
+}
+
+async function findProfileForUser(user, fallbackId = null) {
+  const candidateIds = getProfileCandidateIds(user, fallbackId);
+
+  if (candidateIds.length === 0) {
+    return null;
+  }
+
+  return profilesCollection.findOne({ userId: { $in: candidateIds } });
+}
+
+async function buildProfileLookup(users = [], fallbackIds = []) {
+  const candidateIds = Array.from(
+    new Set(
+      [...fallbackIds, ...users.flatMap((user) => getProfileCandidateIds(user))].filter(
+        (value) => typeof value === "string" && value.trim().length > 0,
+      ),
+    ),
+  );
+
+  if (candidateIds.length === 0) {
+    return new Map();
+  }
+
+  const profiles = await profilesCollection.find({ userId: { $in: candidateIds } }).toArray();
+  return new Map(profiles.map((profile) => [profile.userId, profile]));
+}
+
+function getProfileFromLookup(user, profileLookup, fallbackId = null) {
+  for (const candidateId of getProfileCandidateIds(user, fallbackId)) {
+    if (profileLookup.has(candidateId)) {
+      return profileLookup.get(candidateId);
+    }
+  }
+
+  return null;
 }
 
 function normalizeComparableText(value) {
@@ -137,20 +183,16 @@ router.get("/", async (req, res) => {
   try {
     const user = await findUserForSession(sessionUser);
     const interests = getUserInterests(user);
-    let profile = null;
-
-    if (sessionUser.id) {
-      profile = await profilesCollection.findOne({ userId: sessionUser.id });
-    }
+    const profile = await findProfileForUser(user, sessionUser.id);
 
     return res.json({
       user: {
-        id: user?._id?.toString() || user?.id || sessionUser.id,
+        id: getCanonicalUserId(user, sessionUser.id),
         _id: user?._id,
         name: user?.name || sessionUser.name,
         email: user?.email || sessionUser.email,
-        major: profile?.major,
-        year: profile?.year,
+        major: profile?.major ?? user?.major,
+        year: profile?.year ?? user?.year,
         bio: user?.bio,
         avatar: user?.avatar,
         interestTags: interests,
@@ -177,11 +219,14 @@ router.get("/me", async (req, res) => {
     }
 
     const interests = getUserInterests(user);
+    const profile = await findProfileForUser(user, userId);
 
     return res.json({
-      id: user._id?.toString() || user.id,
+      id: getCanonicalUserId(user, userId),
       name: user.name,
       email: user.email,
+      major: profile?.major ?? user?.major,
+      year: profile?.year ?? user?.year,
       interests,
       interestTags: interests,
       needsOnboarding: interests.length === 0,
@@ -208,7 +253,8 @@ router.get("/matches", async (req, res) => {
 
     const requesterId = getCanonicalUserId(currentUser, sessionUser.id);
     const currentInterests = getUserInterests(currentUser);
-    const currentMajor = normalizeComparableText(currentUser.major);
+    const currentProfile = await findProfileForUser(currentUser, sessionUser.id);
+    const currentMajor = normalizeComparableText(currentProfile?.major ?? currentUser.major);
 
     if (currentInterests.length === 0) {
       return res.json([]);
@@ -224,6 +270,7 @@ router.get("/matches", async (req, res) => {
       })
       .limit(20)
       .toArray();
+    const candidateProfiles = await buildProfileLookup(candidates);
 
     const allCandidateConnectionTargetIds = candidates.flatMap((candidate) =>
       toConnectionTargetIds(candidate),
@@ -239,17 +286,20 @@ router.get("/matches", async (req, res) => {
         const sharedInterestTags = getUserInterests(candidate).filter((interest) =>
           currentInterests.includes(interest),
         );
+        const profile = getProfileFromLookup(candidate, candidateProfiles);
+        const major = profile?.major ?? candidate.major;
+        const year = profile?.year ?? candidate.year;
 
-        const candidateMajor = normalizeComparableText(candidate.major);
+        const candidateMajor = normalizeComparableText(major);
         const candidateTargetIds = toConnectionTargetIds(candidate);
         const isRequested = candidateTargetIds.some((targetId) => requestedTargetIds.has(targetId));
 
         return {
-          id: candidate._id?.toString() || candidate.id,
+          id: getCanonicalUserId(candidate),
           _id: candidate._id,
           name: candidate.name,
-          major: candidate.major,
-          year: candidate.year,
+          major,
+          year,
           sharedInterestTags,
           sharedInterests: sharedInterestTags,
           isRequested,
@@ -302,7 +352,8 @@ router.get("/search", async (req, res) => {
     const requesterId = getCanonicalUserId(currentUser, sessionUser.id);
     const currentUserObjectId = currentUser?._id;
     const currentInterests = getUserInterests(currentUser);
-    const currentMajor = normalizeComparableText(currentUser.major);
+    const currentProfile = await findProfileForUser(currentUser, sessionUser.id);
+    const currentMajor = normalizeComparableText(currentProfile?.major ?? currentUser.major);
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegex = new RegExp(escapedQuery, "i");
 
@@ -313,6 +364,7 @@ router.get("/search", async (req, res) => {
       })
       .limit(20)
       .toArray();
+    const candidateProfiles = await buildProfileLookup(candidates);
 
     const allCandidateConnectionTargetIds = candidates.flatMap((candidate) =>
       toConnectionTargetIds(candidate),
@@ -328,15 +380,18 @@ router.get("/search", async (req, res) => {
         const sharedInterestTags = getUserInterests(candidate).filter((interest) =>
           currentInterests.includes(interest),
         );
-        const candidateMajor = normalizeComparableText(candidate.major);
+        const profile = getProfileFromLookup(candidate, candidateProfiles);
+        const major = profile?.major ?? candidate.major;
+        const year = profile?.year ?? candidate.year;
+        const candidateMajor = normalizeComparableText(major);
         const candidateTargetIds = toConnectionTargetIds(candidate);
 
         return {
-          id: candidate._id?.toString() || candidate.id,
+          id: getCanonicalUserId(candidate),
           _id: candidate._id,
           name: candidate.name,
-          major: candidate.major,
-          year: candidate.year,
+          major,
+          year,
           sharedInterestTags,
           sharedInterests: sharedInterestTags,
           isRequested: candidateTargetIds.some((targetId) => requestedTargetIds.has(targetId)),
@@ -398,7 +453,7 @@ router.post("/interests", async (req, res) => {
         message: "Interests saved successfully",
         interests: normalizedInterests,
         needsOnboarding: false,
-        id: result.insertedId.toString(),
+        id: userId,
       });
     }
 
@@ -577,33 +632,21 @@ router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    let user;
-
-    if (ObjectId.isValid(id)) {
-      user = await usersCollection.findOne({ _id: new ObjectId(id) });
-    }
-
-    if (!user) {
-      user = await usersCollection.findOne({ id });
-    }
+    const user = await findUserByAnyId(id);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    let profile = null;
-    if (user._id || user.id) {
-      const profileUserId = user._id?.toString() || user.id;
-      profile = await profilesCollection.findOne({ userId: profileUserId });
-    }
+    const profile = await findProfileForUser(user, id);
 
     return res.json({
-      id: user._id?.toString() || user.id,
+      id: getCanonicalUserId(user, id),
       _id: user._id,
       name: user.name,
       email: user.email,
-      major: profile?.major,
-      year: profile?.year,
+      major: profile?.major ?? user.major,
+      year: profile?.year ?? user.year,
       bio: user.bio,
       avatar: user.avatar,
       interestTags: getUserInterests(user),
@@ -617,40 +660,64 @@ router.get("/:id", async (req, res) => {
 
 router.put("/profile", async (req, res) => {
   const { major, year } = req.body;
-  const userId = res.locals.authSession?.user?.id;
+  const sessionUser = res.locals.authSession?.user;
+  const userId = sessionUser?.id;
 
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  if (!major || !year) {
+  const normalizedMajor = typeof major === "string" ? major.trim() : "";
+  const normalizedYear = typeof year === "string" ? year.trim() : String(year ?? "").trim();
+
+  if (!normalizedMajor || !normalizedYear) {
     return res.status(400).json({ error: "Major and year are required" });
   }
 
+  const now = new Date();
   const nextProfile = {
     userId,
-    major,
-    year,
-    updatedAt: new Date(),
+    major: normalizedMajor,
+    year: normalizedYear,
+    updatedAt: now,
   };
+
+  const user = await findUserForSession(sessionUser);
 
   await profilesCollection.updateOne(
     { userId },
     {
       $set: nextProfile,
       $setOnInsert: {
-        createdAt: new Date(),
+        createdAt: now,
       },
     },
     { upsert: true },
   );
 
-  const savedProfile = await profilesCollection.findOne({ userId }, { projection: { _id: 0 } });
+  if (user?._id) {
+    await usersCollection.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          major: normalizedMajor,
+          year: normalizedYear,
+          updatedAt: now,
+        },
+      },
+    );
+  }
+
+  const savedProfile = await findProfileForUser(user, userId);
 
   return res.json({
     message: "Profile updated successfully",
     profile: savedProfile,
-    user: res.locals.authSession.user,
+    user: {
+      ...sessionUser,
+      major: normalizedMajor,
+      year: normalizedYear,
+    },
   });
 });
 

@@ -48,7 +48,19 @@ const registerErrorMessageElement = getRegisterElement<HTMLElement>('errorMessag
 const registerTogglePasswordBtnElement = getRegisterElement<HTMLButtonElement>('togglePassword');
 
 // Validate that all required elements exist
-if (!registerFormElement || !registerEmailElement || !registerNameElement || !registerMajorElement || !registerYearElement || !registerPasswordElement || !registerSubmitBtnElement || !registerSubmitTextElement || !registerSuccessMessageElement || !registerErrorMessageElement || !registerTogglePasswordBtnElement) {
+if (
+  !registerFormElement ||
+  !registerEmailElement ||
+  !registerNameElement ||
+  !registerMajorElement ||
+  !registerYearElement ||
+  !registerPasswordElement ||
+  !registerSubmitBtnElement ||
+  !registerSubmitTextElement ||
+  !registerSuccessMessageElement ||
+  !registerErrorMessageElement ||
+  !registerTogglePasswordBtnElement
+) {
   console.error('Missing required form elements for register page');
   throw new Error('Form initialization failed: required elements are missing from the DOM');
 }
@@ -146,17 +158,17 @@ function updatePasswordRequirementsDisplay(password: string): void {
 
   Object.entries(requirements).forEach(([key, isValid]) => {
     const element = document.getElementById(`requirement-${key}`);
+    const icon = document.getElementById(`req-${key}-icon`);
+
     if (element) {
-      const icon = element.querySelector('.requirementIcon');
-      if (icon) {
-        if (isValid) {
-          element.classList.add('valid');
-          icon.textContent = '✓';
-        } else {
-          element.classList.remove('valid');
-          icon.textContent = '✗';
-        }
-      }
+      element.classList.toggle('text-nc-text-primary', isValid);
+      element.classList.toggle('text-nc-text-muted', !isValid);
+    }
+
+    if (icon) {
+      icon.textContent = isValid ? '\u2713' : '\u2715';
+      icon.classList.toggle('text-nc-success', isValid);
+      icon.classList.toggle('text-nc-destructive', !isValid);
     }
   });
 }
@@ -348,29 +360,15 @@ regTogglePasswordBtn.addEventListener('click', (e: MouseEvent): void => {
   const isPassword = regPassword.type === 'password';
   regPassword.type = isPassword ? 'text' : 'password';
 
-  const toggleIcon = document.getElementById('toggleIcon') as HTMLImageElement | null;
-  if (!toggleIcon) {
-    console.error('Toggle icon element not found');
+  const eyeOpenIcon = document.getElementById('eyeOpenIcon');
+  const eyeClosedIcon = document.getElementById('eyeClosedIcon');
+
+  if (!(eyeOpenIcon instanceof HTMLElement) || !(eyeClosedIcon instanceof HTMLElement)) {
     return;
   }
 
-  const eyeIconUrl = regTogglePasswordBtn.dataset.eyeIcon;
-  const eyeSlashIconUrl = regTogglePasswordBtn.dataset.eyeSlashIcon;
-
-  if (!eyeIconUrl || !eyeSlashIconUrl) {
-    console.error('Missing icon URLs in data attributes');
-    return;
-  }
-
-  if (isPassword) {
-    // Switching to text - show eye-slash icon
-    toggleIcon.src = eyeSlashIconUrl;
-    toggleIcon.alt = 'Hide password';
-  } else {
-    // Switching to password - show eye icon
-    toggleIcon.src = eyeIconUrl;
-    toggleIcon.alt = 'Show password';
-  }
+  eyeOpenIcon.classList.toggle('hidden', !isPassword);
+  eyeClosedIcon.classList.toggle('hidden', isPassword);
 });
 
 /**

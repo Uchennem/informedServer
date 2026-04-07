@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buildClientApiUrl } from '../lib/api';
+
   type Props = {
     groupId: string;
     isMember?: boolean;
@@ -8,10 +10,13 @@
   let { groupId, isMember = false, memberCount = 0 }: Props = $props();
 
   let isSubmitting = $state(false);
-  let joined = $state(Boolean(isMember));
-  let count = $state(Math.max(0, Number(memberCount) || 0));
+  let optimisticJoined = $state<boolean | null>(null);
+  let optimisticCount = $state<number | null>(null);
   let errorMessage = $state('');
   let animating = $state(false);
+
+  const joined = $derived(optimisticJoined ?? Boolean(isMember));
+  const count = $derived(optimisticCount ?? Math.max(0, Number(memberCount) || 0));
 
   async function toggleMembership() {
     if (isSubmitting) return;
@@ -25,20 +30,14 @@
 
     isSubmitting = true;
     errorMessage = '';
-    joined = nextJoined;
-    count = nextJoined ? previousCount + 1 : Math.max(0, previousCount - 1);
+    optimisticJoined = nextJoined;
+    optimisticCount = nextJoined ? previousCount + 1 : Math.max(0, previousCount - 1);
 
     try {
-      const baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
-
-      if (!baseUrl) {
-        throw new Error('Missing PUBLIC_API_BASE_URL');
-      }
-
       const action = nextJoined ? 'join' : 'leave';
       const method = nextJoined ? 'POST' : 'DELETE';
 
-      const response = await fetch(`${baseUrl}/api/groups/${groupId}/${action}`, {
+      const response = await fetch(buildClientApiUrl(`/api/groups/${groupId}/${action}`), {
         method,
         credentials: 'include',
       });
@@ -46,9 +45,19 @@
       if (!response.ok) {
         throw new Error('Membership request failed');
       }
+
+      const payload = await response.json().catch(() => null);
+
+      if (typeof payload?.joined === 'boolean') {
+        optimisticJoined = payload.joined;
+      }
+
+      if (typeof payload?.memberCount === 'number') {
+        optimisticCount = Math.max(0, payload.memberCount);
+      }
     } catch {
-      joined = previousJoined;
-      count = previousCount;
+      optimisticJoined = previousJoined;
+      optimisticCount = previousCount;
       errorMessage = 'Unable to update membership right now';
     } finally {
       isSubmitting = false;

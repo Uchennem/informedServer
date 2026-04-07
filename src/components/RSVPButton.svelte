@@ -2,6 +2,7 @@
   import { onDestroy } from 'svelte';
   import { scale } from 'svelte/transition';
   import { elasticOut } from 'svelte/easing';
+  import { buildClientApiUrl } from '../lib/api';
   import { initializeRsvpCount, rsvpCounts, setRsvpCount } from '../stores/rsvp';
 
   export let postId = '';
@@ -30,13 +31,10 @@
     isLoading = true;
 
     try {
-      const response = await fetch(
-        `${import.meta.env.PUBLIC_API_BASE_URL}/api/posts/${postId}/rsvp`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      );
+      const response = await fetch(buildClientApiUrl(`/api/posts/${postId}/rsvp`), {
+        method: 'POST',
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         throw new Error('RSVP request failed');

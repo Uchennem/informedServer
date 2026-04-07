@@ -30,13 +30,17 @@ function serializePost(post) {
 router.get("/", async (req, res) => {
   try {
     const query = {};
+    const authorId = typeof req.query.authorId === "string" ? req.query.authorId.trim() : "";
+    const author = typeof req.query.author === "string" ? req.query.author.trim() : "";
 
     if (req.query.category && String(req.query.category).toLowerCase() !== "all") {
       query.category = req.query.category;
     }
 
-    if (req.query.author) {
-      query.authorName = req.query.author;
+    if (authorId) {
+      query.authorId = authorId;
+    } else if (author) {
+      query.$or = [{ authorName: author }, { authorId: author }];
     }
 
     const posts = await postsCollection

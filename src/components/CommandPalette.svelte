@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { buildClientApiUrl } from '../lib/api';
 
   let open = false;
   let query = '';
@@ -65,11 +66,15 @@
     }
   }
 
-  function executeCommand(cmd: (typeof commands)[0]) {
+  async function executeCommand(cmd: (typeof commands)[0]) {
     open = false;
     query = '';
 
     if (cmd.action === 'logout') {
+      await fetch(buildClientApiUrl('/api/auth/sign-out'), {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
       document.cookie = 'better-auth.session_token=; Max-Age=0; path=/';
       window.location.href = '/login';
       return;
@@ -129,21 +134,24 @@
 
     <ul class="cmd-list" role="listbox">
       {#each filtered as cmd, i (cmd.label)}
-        <li
-          role="option"
-          aria-selected={i === selectedIndex}
-          class="cmd-item {i === selectedIndex ? 'cmd-item--active' : ''}"
-          on:click={() => executeCommand(cmd)}
-          on:mouseenter={() => (selectedIndex = i)}
-        >
-          <span class="cmd-icon">{cmd.icon}</span>
-          <div class="cmd-info">
-            <span class="cmd-label">{cmd.label}</span>
-            <span class="cmd-desc">{cmd.description}</span>
-          </div>
-          {#if i === selectedIndex}
+        <li role="none">
+          <button
+            type="button"
+            role="option"
+            aria-selected={i === selectedIndex}
+            class="cmd-item {i === selectedIndex ? 'cmd-item--active' : ''}"
+            on:click={() => executeCommand(cmd)}
+            on:mouseenter={() => (selectedIndex = i)}
+          >
+            <span class="cmd-icon">{cmd.icon}</span>
+            <div class="cmd-info">
+              <span class="cmd-label">{cmd.label}</span>
+              <span class="cmd-desc">{cmd.description}</span>
+            </div>
+            {#if i === selectedIndex}
             <span class="cmd-arrow">↵</span>
           {/if}
+          </button>
         </li>
       {/each}
 
@@ -259,10 +267,15 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    width: 100%;
     padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: none;
     cursor: cell;
     transition: all 100ms ease;
     border-left: 4px solid transparent;
+    text-align: left;
+    font: inherit;
   }
 
   .cmd-item--active {

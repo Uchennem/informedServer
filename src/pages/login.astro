@@ -136,20 +136,5 @@ if (authCookie) {
 		</div>
 
 		<script src="../js/login.ts"></script>
-		<script>
-			// Password toggle
-			const toggle = document.getElementById('togglePassword');
-			const passInput = document.getElementById('password') as HTMLInputElement;
-			const eyeOpen = document.getElementById('eyeOpenIcon');
-			const eyeClosed = document.getElementById('eyeClosedIcon');
-			if (toggle && passInput && eyeOpen && eyeClosed) {
-				toggle.addEventListener('click', () => {
-					const isPassword = passInput.type === 'password';
-					passInput.type = isPassword ? 'text' : 'password';
-					eyeOpen.classList.toggle('hidden', !isPassword);
-					eyeClosed.classList.toggle('hidden', isPassword);
-				});
-			}
-		</script>
 	</body>
 </html>

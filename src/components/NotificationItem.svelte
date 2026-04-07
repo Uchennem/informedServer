@@ -17,10 +17,12 @@
     createdAt: string | Date;
   } = $props();
 
-  let read = $state(initialRead);
+  let readOverride = $state<boolean | null>(null);
   let actionDone = $state<'accepted' | 'declined' | null>(null);
   let acting = $state(false);
   let actionError = $state('');
+
+  const read = $derived(readOverride ?? initialRead);
 
   $effect(() => {
     if (!read) {
@@ -28,7 +30,7 @@
         method: 'PATCH',
         credentials: 'include',
       })
-        .then(() => { read = true; })
+        .then(() => { readOverride = true; })
         .catch(() => {});
     }
   });
@@ -49,7 +51,7 @@
           method: 'PATCH',
           credentials: 'include',
         });
-        read = true;
+        readOverride = true;
       } else {
         const data = await res.json().catch(() => ({}));
         actionError = data.error ?? 'Action failed.';
