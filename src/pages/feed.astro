@@ -29,24 +29,58 @@ type MatchUser = {
 const request = Astro.request;
 const plannerPills = ['Tonight', 'This Week', 'Weekend'];
 const feedFilters = ['All', 'Social', 'Academic', 'Sports', 'Faith', 'Arts'];
-const selectedCategory = Astro.url.searchParams.get('category') ?? 'All';
 const authCookieHeader = Astro.request.headers.get('cookie') ?? '';
 
 if (!authCookieHeader.includes('better-auth.session_token')) {
   return Astro.redirect('/login');
 }
 
+function normalizeValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getPostFilterKeys(post: Post) {
+  const values = [
+    post.category ?? '',
+    post.title ?? '',
+    post.description ?? '',
+    post.body ?? '',
+    post.location ?? '',
+  ]
+    .flatMap((value) => value.split(/[\s,/]+/))
+    .map(normalizeValue)
+    .filter(Boolean);
+
+  const keys = new Set(values);
+
+  if (keys.has('events') || keys.has('event') || keys.has('networking') || keys.has('social') || keys.has('community')) {
+    keys.add('social');
+  }
+
+  if (keys.has('workshops') || keys.has('workshop') || keys.has('academic') || keys.has('study') || keys.has('coding')) {
+    keys.add('academic');
+  }
+
+  if (keys.has('sports') || keys.has('fitness') || keys.has('game') || keys.has('games') || keys.has('athletics')) {
+    keys.add('sports');
+  }
+
+  if (keys.has('faith') || keys.has('church') || keys.has('ministry') || keys.has('spiritual')) {
+    keys.add('faith');
+  }
+
+  if (keys.has('arts') || keys.has('art') || keys.has('music') || keys.has('creative') || keys.has('design')) {
+    keys.add('arts');
+  }
+
+  return Array.from(keys);
+}
+
 let posts: Post[] = [];
 let matches: MatchUser[] = [];
 
 try {
-  const postsUrl = new URL(buildServerApiUrl('/api/posts', Astro.url));
-
-  if (selectedCategory !== 'All') {
-    postsUrl.searchParams.set('category', selectedCategory);
-  }
-
-  const response = await fetch(postsUrl.toString(), {
+  const response = await fetch(buildServerApiUrl('/api/posts', Astro.url), {
     headers: {
       cookie: authCookieHeader,
     },
@@ -105,40 +139,58 @@ try {
         <div class="overflow-x-auto scrollbar-thin">
           <div class="flex gap-2 min-w-max" id="feedFilterBar">
             {feedFilters.map((filter) => (
-              <a
-                href={filter === 'All' ? '/feed' : `/feed?category=${encodeURIComponent(filter)}`}
+              <button
+                type="button"
                 class={`text-xs font-semibold uppercase tracking-wide transition-all duration-200 flex-shrink-0 rounded-full px-3 py-1.5 border ${
-                  filter === selectedCategory
+                  filter === 'All'
                     ? 'bg-nc-accent-primary/15 text-nc-accent-primary border-nc-accent-primary/40'
                     : 'text-nc-text-subtle border-nc-border-subtle hover:text-nc-text-primary hover:border-nc-text-subtle'
                 }`}
                 data-filter={filter}
               >
                 {filter}
-              </a>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
       <div class="mb-4 flex flex-col gap-2 text-sm text-nc-text-muted sm:flex-row sm:items-center sm:justify-between">
-        <p>{selectedCategory === 'All' ? 'All campus activities' : `${selectedCategory} activities`}</p>
-        <p>{posts.length} {posts.length === 1 ? 'result' : 'results'}</p>
+        <p id="feedSummaryLabel">All campus activities</p>
+        <p id="feedResultCount">{posts.length} {posts.length === 1 ? 'result' : 'results'}</p>
       </div>
 
       <div class="mb-6">
         <CreatePostForm client:load />
       </div>
 
+      <div
+        id="filteredFeedEmptyState"
+        class="card text-center py-12 px-6 hidden mb-6"
+        data-default-message="Try a different planner or category."
+      >
+        <svg class="w-12 h-12 mx-auto text-nc-text-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <p class="text-nc-text-primary font-semibold text-lg mb-1">No events match these filters</p>
+        <p class="mt-2 text-sm text-nc-text-muted mb-0" id="filteredFeedEmptyMessage">Try a different planner or category.</p>
+      </div>
+
       <div class="columns-1 md:columns-2 gap-6 stagger-container" id="postsContainer">
         {
           posts.length > 0 ? (
             posts.map((post, index) => (
-              <div class="mb-6 break-inside-avoid inline-block w-full align-top">
+              <div
+                class="mb-6 break-inside-avoid inline-block w-full align-top"
+                data-feed-post
+                data-post-category={post.category}
+                data-post-filter-keys={getPostFilterKeys(post).join(' ')}
+                data-post-date={post.date}
+              >
                 <PostCard post={post} />
 
                 {index === 2 && matches.length > 0 && (
-                  <div class="card p-5 relative overflow-hidden mt-6" id="peopleSuggestionCard">
+                  <div class="card p-5 relative overflow-hidden mt-6" id="peopleSuggestionCard" data-feed-accessory>
                     <button
                       type="button"
                       id="dismissPeopleCard"
@@ -199,8 +251,8 @@ try {
         }
 
         {posts.length > 0 && posts.length < 3 && matches.length > 0 && (
-          <div class="mb-6 break-inside-avoid inline-block w-full align-top">
-            <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCardAlt">
+          <div class="mb-6 break-inside-avoid inline-block w-full align-top" data-feed-accessory-wrapper>
+            <div class="card p-5 relative overflow-hidden" id="peopleSuggestionCardAlt" data-feed-accessory>
             <button
               type="button"
               class="dismiss-people-btn absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-nc-text-subtle hover:text-nc-text-primary hover:bg-nc-bg-elevated transition-all"
@@ -246,14 +298,121 @@ try {
 
 <script>
   const planner = document.getElementById('plannerStrip');
+  const filterBar = document.getElementById('feedFilterBar');
+  const feedPosts = Array.from(document.querySelectorAll('[data-feed-post]'));
+  const feedAccessories = Array.from(document.querySelectorAll('[data-feed-accessory]'));
+  const accessoryWrappers = Array.from(document.querySelectorAll('[data-feed-accessory-wrapper]'));
+  const filteredEmptyState = document.getElementById('filteredFeedEmptyState');
+  const filteredEmptyMessage = document.getElementById('filteredFeedEmptyMessage');
+  const feedSummaryLabel = document.getElementById('feedSummaryLabel');
+  const feedResultCount = document.getElementById('feedResultCount');
+  let activePlanner = 'Tonight';
+  let activeCategory = 'All';
+
+  function isPlannerMatch(postDateValue, plannerValue) {
+    const postDate = new Date(postDateValue);
+    if (Number.isNaN(postDate.getTime())) {
+      return plannerValue === 'This Week';
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setDate(endOfToday.getDate() + 1);
+
+    if (plannerValue === 'Tonight') {
+      return postDate >= startOfToday && postDate < endOfToday;
+    }
+
+    if (plannerValue === 'Weekend') {
+      const day = postDate.getDay();
+      return day === 6 || day === 0;
+    }
+
+    if (plannerValue === 'This Week') {
+      const endOfWeek = new Date(startOfToday);
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+      endOfWeek.setHours(23, 59, 59, 999);
+      return postDate >= startOfToday && postDate <= endOfWeek;
+    }
+
+    return true;
+  }
+
+  function applyFeedFilters() {
+    let visibleCount = 0;
+
+    feedPosts.forEach((card) => {
+      const postDate = card.getAttribute('data-post-date') ?? '';
+      const filterKeys = (card.getAttribute('data-post-filter-keys') ?? '').split(/\s+/).filter(Boolean);
+      const plannerMatch = isPlannerMatch(postDate, activePlanner);
+      const categoryMatch = activeCategory === 'All' || filterKeys.includes(activeCategory.toLowerCase());
+      const isVisible = plannerMatch && categoryMatch;
+
+      card.classList.toggle('hidden', !isVisible);
+
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    });
+
+    feedAccessories.forEach((item) => {
+      item.classList.toggle('hidden', visibleCount === 0);
+    });
+
+    accessoryWrappers.forEach((item) => {
+      item.classList.toggle('hidden', visibleCount === 0);
+    });
+
+    if (filteredEmptyState) {
+      filteredEmptyState.classList.toggle('hidden', visibleCount > 0 || feedPosts.length === 0);
+    }
+
+    if (filteredEmptyMessage) {
+      const categoryText = activeCategory === 'All' ? 'all categories' : activeCategory.toLowerCase();
+      filteredEmptyMessage.textContent = `No ${categoryText} events match ${activePlanner.toLowerCase()}.`;
+    }
+
+    if (feedSummaryLabel) {
+      const categoryText = activeCategory === 'All' ? 'all campus activities' : `${activeCategory} activities`;
+      feedSummaryLabel.textContent = `${activePlanner}: ${categoryText}`;
+    }
+
+    if (feedResultCount) {
+      feedResultCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'result' : 'results'}`;
+    }
+  }
+
   if (planner) {
     planner.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('button');
       if (!btn) return;
       planner.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      activePlanner = btn.dataset.planner ?? 'Tonight';
+      applyFeedFilters();
     });
   }
+
+  if (filterBar) {
+    filterBar.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('button');
+      if (!btn) return;
+
+      filterBar.querySelectorAll('button').forEach((button) => {
+        button.classList.remove('bg-nc-accent-primary/15', 'text-nc-accent-primary', 'border-nc-accent-primary/40');
+        button.classList.add('text-nc-text-subtle', 'border-nc-border-subtle');
+      });
+
+      btn.classList.remove('text-nc-text-subtle', 'border-nc-border-subtle');
+      btn.classList.add('bg-nc-accent-primary/15', 'text-nc-accent-primary', 'border-nc-accent-primary/40');
+
+      activeCategory = btn.dataset.filter ?? 'All';
+      applyFeedFilters();
+    });
+  }
+
+  applyFeedFilters();
 
   window.addEventListener('informed:post-created', () => {
     window.location.reload();

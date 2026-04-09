@@ -11,6 +11,7 @@ type Group = {
   name: string;
   description?: string;
   category?: string;
+  tags?: string[];
   memberCount?: number;
   isMember?: boolean;
 };
@@ -22,6 +23,46 @@ const groupFilters = ['All', 'Academic', 'Social', 'Sports', 'Faith', 'Arts'];
 
 if (!authCookieHeader.includes('better-auth.session_token')) {
   return Astro.redirect('/login');
+}
+
+function normalizeValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getGroupFilterKeys(group: Group) {
+  const values = [
+    group.category ?? '',
+    ...(Array.isArray(group.tags) ? group.tags : []),
+    group.name ?? '',
+    group.description ?? '',
+  ]
+    .flatMap((value) => value.split(/[\s,/]+/))
+    .map(normalizeValue)
+    .filter(Boolean);
+
+  const keys = new Set(values);
+
+  if (keys.has('creative') || keys.has('art') || keys.has('music') || keys.has('design')) {
+    keys.add('arts');
+  }
+
+  if (keys.has('study') || keys.has('studies') || keys.has('coding') || keys.has('stem') || keys.has('cs')) {
+    keys.add('academic');
+  }
+
+  if (keys.has('community') || keys.has('friends') || keys.has('networking')) {
+    keys.add('social');
+  }
+
+  if (keys.has('fitness') || keys.has('athletics')) {
+    keys.add('sports');
+  }
+
+  if (keys.has('religion') || keys.has('spiritual')) {
+    keys.add('faith');
+  }
+
+  return Array.from(keys);
 }
 
 try {
@@ -95,30 +136,47 @@ const myGroups = groups.filter((group) => group.isMember);
       <section>
         {
           groups.length > 0 ? (
-            <div class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 stagger-container">
+            <>
+              <div
+                id="groupFilterEmptyState"
+                class="card py-12 px-6 text-center hidden"
+                data-default-message="No groups match this filter yet."
+              >
+                <svg class="w-10 h-10 mx-auto text-nc-text-subtle mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <p class="text-nc-text-primary font-semibold mb-1">No groups match this filter</p>
+                <p class="text-sm text-nc-text-muted mb-0" id="groupFilterEmptyMessage">Try a different category or create a new group.</p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 stagger-container" id="groupsGrid">
               {groups.map((group) => {
                 const groupId = group.id ?? group._id ?? '';
+                const filterKeys = getGroupFilterKeys(group).join(' ');
                 return (
-                  <GroupCard
-                    group={{
-                      id: groupId,
-                      name: group.name,
-                      description: group.description,
-                      category: group.category,
-                      memberCount: group.memberCount,
-                      isMember: group.isMember,
-                    }}
-                  >
-                    <JoinButton
-                      client:load
-                      groupId={groupId}
-                      isMember={group.isMember ?? false}
-                      memberCount={group.memberCount ?? 0}
-                    />
-                  </GroupCard>
+                  <div data-group-card data-group-filters={filterKeys}>
+                    <GroupCard
+                      group={{
+                        id: groupId,
+                        name: group.name,
+                        description: group.description,
+                        category: group.category,
+                        memberCount: group.memberCount,
+                        isMember: group.isMember,
+                      }}
+                    >
+                      <JoinButton
+                        client:load
+                        groupId={groupId}
+                        isMember={group.isMember ?? false}
+                        memberCount={group.memberCount ?? 0}
+                      />
+                    </GroupCard>
+                  </div>
                 );
               })}
-            </div>
+              </div>
+            </>
           ) : (
             <div class="card py-12 px-6 text-center">
               <svg class="w-10 h-10 mx-auto text-nc-text-subtle mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,14 +195,46 @@ const myGroups = groups.filter((group) => group.isMember);
 <script>
   // Group filter interactivity
   const bar = document.getElementById('groupFilterBar');
+  const groupCards = Array.from(document.querySelectorAll('[data-group-card]'));
+  const emptyState = document.getElementById('groupFilterEmptyState');
+  const emptyMessage = document.getElementById('groupFilterEmptyMessage');
+
+  function applyGroupFilter(selectedFilter) {
+    let visibleCount = 0;
+
+    groupCards.forEach((card) => {
+      const filters = (card.getAttribute('data-group-filters') ?? '').split(/\s+/).filter(Boolean);
+      const isVisible = selectedFilter === 'All' || filters.includes(selectedFilter.toLowerCase());
+
+      card.classList.toggle('hidden', !isVisible);
+
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    });
+
+    if (emptyState) {
+      emptyState.classList.toggle('hidden', visibleCount > 0 || groupCards.length === 0);
+    }
+
+    if (emptyMessage) {
+      emptyMessage.textContent = selectedFilter === 'All'
+        ? 'Try a different category or create a new group.'
+        : `No ${selectedFilter.toLowerCase()} groups match right now.`;
+    }
+  }
+
   if (bar) {
     bar.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('button');
       if (!btn) return;
       bar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      applyGroupFilter(btn.dataset.filter ?? 'All');
     });
   }
+
+  applyGroupFilter('All');
 
   window.addEventListener('informed:group-created', () => {
     window.location.reload();
